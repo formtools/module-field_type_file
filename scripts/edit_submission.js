@@ -19,6 +19,29 @@ files_ns.confirm_delete_dialog = $("<div id=\"confirm_delete_dialog\"></div>");
 
 
 /**
+ * Checks the file field has a value in it. This is used instead of the default RSV "required" rule
+ * because if a file's already uploaded, it needs to pass validation.
+ */
+files_ns.check_required = function() {
+  var errors = [];
+  for (var i=0; i<rsv_custom_func_errors.length; i++) {
+    if (rsv_custom_func_errors[i].func == "files_ns.check_required") {
+      var field    = document.edit_submission_form[rsv_custom_func_errors[i].field];
+      var field_id = rsv_custom_func_errors[i].field_id;
+      var has_file = ($("#cf_file_" + field_id + "_content").css("display") == "block" && $("#cf_file_" + field_id + "_content").html() != "");
+      if (!has_file && !field.value) {
+        errors.push([field, rsv_custom_func_errors[i].err]);
+      }
+    }
+  }
+  if (errors.length) {
+    return errors;
+  }
+  return true;
+}
+
+
+/**
  * Deletes a submission file.
  *
  * @param field_id

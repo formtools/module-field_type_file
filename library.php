@@ -91,6 +91,13 @@ function field_type_file__install($module_id)
     VALUES ($field_type_id, 'Field Comments', 'comments', 'textarea', 'na', 'static', '', 7)
   ");
 
+  mysql_query("
+    INSERT INTO {$g_table_prefix}field_type_validation_rules (field_type_id, rsv_rule, rule_label, rsv_field_name,
+      custom_function, custom_function_required, default_error_message, list_order)
+  	VALUES ($field_type_id, 'function', '{\$LANG.word_required}', '', 'files_ns.check_required', 'yes',
+  	  '{\$LANG.validation_default_rule_required}', 1)
+   ");
+
   // lastly, add our hooks
   ft_register_hook("code", "field_type_file", "manage_files", "ft_update_submission", "ft_file_update_submission_hook", 50, true);
   ft_register_hook("code", "field_type_file", "manage_files", "ft_process_form", "ft_file_process_form_hook", 50, true);
@@ -171,6 +178,16 @@ function field_type_file__upgrade($old_version, $new_version)
   if ($old_version_info["release_date"] < 20110613)
   {
     ft_register_hook("code", "field_type_file", "start", "ft_get_uploaded_files", "ft_file_get_uploaded_files_hook", 50, true);
+  }
+
+  if ($old_version_info["release_date"] < 20111007)
+  {
+  	@mysql_query("
+  	  INSERT INTO {$g_table_prefix}field_type_validation_rules (field_type_id, rsv_rule, rule_label, rsv_field_name,
+  	    custom_function, custom_function_required, default_error_message, list_order)
+  	  VALUES ($field_type_id, 'function', '{\$LANG.word_required}', '', 'files_ns.check_required', 'yes',
+  	    '{\$LANG.validation_default_rule_required}', 1)
+  	");
   }
 }
 
@@ -488,8 +505,7 @@ function ft_file_include_js($template, $page_data)
   if ($curr_page != "admin_edit_submission" && $curr_page != "client_edit_submission")
     return;
 
-
-  echo "<script src=\"$g_root_url/modules/field_type_file/scripts/edit_submission.js\"></script>\n";
+  echo "<script src=\"$g_root_url/modules/field_type_file/scripts/edit_submission.js?v=2\"></script>\n";
 }
 
 
