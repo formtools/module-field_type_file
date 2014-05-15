@@ -288,6 +288,7 @@ function ft_file_upload_submission_file($form_id, $submission_id, $file_field_in
   // pull a couple of values out of the field's settings (these are custom to the field)
   $file_upload_max_size = $file_field_info["settings"]["max_file_size"];
   $file_upload_dir      = $file_field_info["settings"]["folder_path"];
+  $permitted_file_types = $file_field_info["settings"]["permitted_file_types"];
 
   // check file size
   if ($filesize_kb > $file_upload_max_size)
@@ -304,15 +305,14 @@ function ft_file_upload_submission_file($form_id, $submission_id, $file_field_in
   if (!is_dir($file_upload_dir) || !is_writable($file_upload_dir))
     return array(false, $LANG["notify_invalid_field_upload_folder"]);
 
-
   // check file extension is valid. Note: this is "dumb" - it just tests for the file extension string, not
   // the actual file type based on it's header info [this is done because I want to allow users to permit
   // uploading of any file types, and I can't know about all header types]
   $is_valid_extension = true;
-  if (!empty($file_upload_types))
+  if (!empty($permitted_file_types))
   {
     $is_valid_extension = false;
-    $raw_extensions = explode(",", $file_upload_types);
+    $raw_extensions = explode(",", $permitted_file_types);
 
     foreach ($raw_extensions as $ext)
     {
