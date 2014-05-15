@@ -15,7 +15,7 @@ function field_type_file__install($module_id)
   $field_type_info = ft_get_field_type_by_identifier("file");
   if (!empty($field_type_info))
   {
-  	return array(false, $LANG["notify_module_already_installed"]);
+    return array(false, $LANG["notify_module_already_installed"]);
   }
 
   // find the FIRST field type group. Most installations won't have the Custom Fields module installed so
@@ -40,11 +40,11 @@ function field_type_file__install($module_id)
   $query = mysql_query("
     INSERT INTO {$g_table_prefix}field_types (is_editable, non_editable_info, managed_by_module_id, field_type_name,
       field_type_identifier, group_id, is_file_field, is_date_field, raw_field_type_map, raw_field_type_map_multi_select_id,
-      list_order, compatible_field_sizes, view_field_smarty_markup, edit_field_smarty_markup, php_processing,
-      resources_css, resources_js)
+      list_order, compatible_field_sizes, view_field_rendering_type, view_field_php_function_source, view_field_php_function,
+      view_field_smarty_markup, edit_field_smarty_markup, php_processing, resources_css, resources_js)
     VALUES ('no', 'This module may only be edited via the File Upload module.', $module_id, '{\$LANG.word_file}',
-      'file', $group_id, 'yes', 'no', 'file', NULL,
-      $next_list_order, 'large,very_large', '{if \$VALUE}\r\n  <a href=\"{\$folder_url}/{\$VALUE}\" \r\n    {if \$use_fancybox == \"yes\"}class=\"fancybox\"{/if}>{\$VALUE}</a>\r\n{/if}',
+      'file', $group_id, 'yes', 'no', 'file', NULL, $next_list_order, 'large,very_large', 'smarty', 'core', '',
+      '{if \$VALUE}\r\n  <a href=\"{\$folder_url}/{\$VALUE}\" \r\n    {if \$use_fancybox == \"yes\"}class=\"fancybox\"{/if}>{\$VALUE}</a>\r\n{/if}',
       '<div class=\"cf_file\">\r\n  <input type=\"hidden\" class=\"cf_file_field_id\" value=\"{\$FIELD_ID}\" />\r\n  <div id=\"cf_file_{\$FIELD_ID}_content\" {if !\$VALUE}style=\"display:none\"{/if}>\r\n    <a href=\"{\$folder_url}/{\$VALUE}\" \r\n      {if \$use_fancybox == \"yes\"}class=\"fancybox\"{/if}>{\$VALUE}</a>\r\n    <input type=\"button\" class=\"cf_delete_file\" \r\n      value=\"{\$LANG.phrase_delete_file|upper}\" />\r\n  </div>\r\n  <div id=\"cf_file_{\$FIELD_ID}_no_content\" {if \$VALUE}style=\"display:none\"{/if}>\r\n    <input type=\"file\" name=\"{\$NAME}\" />\r\n  </div>\r\n  <div id=\"file_field_{\$FIELD_ID}_message_id\" class=\"cf_file_message\"></div>\r\n</div>\r\n',
       '', '', '/* all JS for this module is found in /modules/field_type_file/scripts/edit_submission.js */')
     ") or die(mysql_error());
@@ -96,6 +96,7 @@ function field_type_file__install($module_id)
   ft_register_hook("code", "field_type_file", "manage_files", "ft_process_form", "ft_file_process_form_hook", 50, true);
   ft_register_hook("code", "field_type_file", "manage_files", "ft_api_process_form", "ft_file_api_process_form_hook", 50, true);
   ft_register_hook("code", "field_type_file", "start", "ft_delete_submission_files", "ft_file_delete_submissions_hook", 50, true);
+  ft_register_hook("code", "field_type_file", "start", "ft_get_uploaded_files", "ft_file_get_uploaded_files_hook", 50, true);
   ft_register_hook("template", "field_type_file", "head_bottom", "", "ft_file_include_js");
 
   return array(true, "");
@@ -166,6 +167,11 @@ function field_type_file__upgrade($old_version, $new_version)
   {
     ft_register_hook("code", "field_type_file", "start", "ft_delete_submission_files", "ft_file_delete_submissions_hook", 50, true);
   }
+
+  if ($old_version_info["release_date"] < 20110613)
+  {
+    ft_register_hook("code", "field_type_file", "start", "ft_get_uploaded_files", "ft_file_get_uploaded_files_hook", 50, true);
+  }
 }
 
 
@@ -191,18 +197,17 @@ function ft_file_update_submission_hook($params)
   $problem_files = array();
 
   $return_info = array(
-    "success" => true,
-    "message" => ""
+    "success" => true
   );
 
   foreach ($file_fields as $file_field_info)
   {
-  	$field_id      = $file_field_info["field_info"]["field_id"];
-  	$field_type_id = $file_field_info["field_info"]["field_type_id"];
-  	$field_name    = $file_field_info["field_info"]["field_name"];
+    $field_id      = $file_field_info["field_info"]["field_id"];
+    $field_type_id = $file_field_info["field_info"]["field_type_id"];
+    $field_name    = $file_field_info["field_info"]["field_name"];
 
-  	if ($field_type_id != $module_field_type_id)
-  	  continue;
+    if ($field_type_id != $module_field_type_id)
+      continue;
 
     // nothing was included in this field, just ignore it
     if (empty($_FILES[$field_name]["name"]))
@@ -287,11 +292,11 @@ function ft_file_upload_submission_file($form_id, $submission_id, $file_field_in
   // check file size
   if ($filesize_kb > $file_upload_max_size)
   {
-  	$placeholders = array(
-  	  "FILESIZE"    => round($filesize_kb, 1),
-  	  "MAXFILESIZE" => $file_upload_max_size
-  	);
-  	$error = ft_eval_smarty_string($LANG["notify_file_too_large"], $placeholders);
+    $placeholders = array(
+      "FILESIZE"    => round($filesize_kb, 1),
+      "MAXFILESIZE" => $file_upload_max_size
+    );
+    $error = ft_eval_smarty_string($LANG["notify_file_too_large"], $placeholders);
     return array(false, $error);
   }
 
@@ -516,10 +521,10 @@ function ft_file_process_form_hook($params)
 
   foreach ($file_fields as $file_field_info)
   {
-  	$field_id      = $file_field_info["field_info"]["field_id"];
-  	$field_type_id = $file_field_info["field_info"]["field_type_id"];
-  	$field_name    = $file_field_info["field_info"]["field_name"];
-  	$include_on_redirect = $file_field_info["field_info"]["include_on_redirect"];
+    $field_id      = $file_field_info["field_info"]["field_id"];
+    $field_type_id = $file_field_info["field_info"]["field_type_id"];
+    $field_name    = $file_field_info["field_info"]["field_name"];
+    $include_on_redirect = $file_field_info["field_info"]["include_on_redirect"];
 
     if ($module_field_type_id != $field_type_id)
       continue;
@@ -592,13 +597,13 @@ function ft_file_api_process_form_hook($params)
 
   foreach ($file_fields as $file_field_info)
   {
-  	$field_type_id = $file_field_info["field_info"]["field_type_id"];
+    $field_type_id = $file_field_info["field_info"]["field_type_id"];
     if ($module_field_type_id != $field_type_id)
       continue;
 
-  	$field_id      = $file_field_info["field_info"]["field_id"];
-  	$field_name    = $file_field_info["field_info"]["field_name"];
-  	$include_on_redirect = $file_field_info["field_info"]["include_on_redirect"];
+    $field_id      = $file_field_info["field_info"]["field_id"];
+    $field_name    = $file_field_info["field_info"]["field_name"];
+    $include_on_redirect = $file_field_info["field_info"]["include_on_redirect"];
     $field_settings = ft_get_field_settings($field_id);
     $file_field_info["settings"] = $field_settings;
 
@@ -668,24 +673,24 @@ function ft_file_delete_submissions_hook($params)
     {
       if (!is_file("$folder/$filename"))
       {
-      	$problems[] = array(
-      	  "filename" => $filename,
-      	  "error"    => ft_eval_smarty_string($L["notify_file_not_deleted_no_exist"], array("folder" => $folder))
-      	);
+        $problems[] = array(
+          "filename" => $filename,
+          "error"    => ft_eval_smarty_string($L["notify_file_not_deleted_no_exist"], array("folder" => $folder))
+        );
       }
       else if (is_file("$folder/$file") && (!is_readable("$folder/$file") || !is_writable("$folder/$file")))
       {
-      	$problems[] = array(
-      	  "filename" => $filename,
-      	  "error"    => ft_eval_smarty_string($L["notify_file_not_deleted_permissions"], array("folder" => $folder))
-      	);
+        $problems[] = array(
+          "filename" => $filename,
+          "error"    => ft_eval_smarty_string($L["notify_file_not_deleted_permissions"], array("folder" => $folder))
+        );
       }
       else
       {
-      	$problems[] = array(
-      	  "filename" => $filename,
-      	  "error"    => ft_eval_smarty_string($L["notify_file_not_deleted_unknown_error"], array("folder" => $folder))
-      	);
+        $problems[] = array(
+          "filename" => $filename,
+          "error"    => ft_eval_smarty_string($L["notify_file_not_deleted_unknown_error"], array("folder" => $folder))
+        );
       }
     }
   }
@@ -696,3 +701,57 @@ function ft_file_delete_submissions_hook($params)
     return array(false, $problems);
 }
 
+
+/**
+ * This is the hook for the ft_get_uploaded_files core function. It returns an array of hashes;
+ *
+ * @param array $params
+ */
+function ft_file_get_uploaded_files_hook($params)
+{
+  global $g_table_prefix;
+
+  $form_id   = $params["form_id"];
+  $field_ids = (isset($params["field_ids"]) && is_array($params["field_ids"])) ? $params["field_ids"] : array();
+
+  $module_field_type_id = ft_get_field_type_id_by_identifier("file");
+
+  $data = array();
+  foreach ($field_ids as $field_id)
+  {
+    $field_type_id = ft_get_field_type_id_by_field_id($field_id);
+    if ($field_type_id != $module_field_type_id)
+      continue;
+
+    $result = ft_get_field_col_by_field_id($form_id, field_id);
+    $col_name = $result[$field_id];
+    if (empty($col_name))
+      continue;
+
+    $query = mysql_query("SELECT submission_id, $col_name FROM {$g_table_prefix}form_{$form_id}");
+    if (!$query)
+      continue;
+
+
+    $field_settings = ft_get_field_settings($field_id);
+    while ($row = mysql_fetch_assoc($query))
+    {
+      // here, nothing's been uploaded in the field
+      if (empty($row[$col_name]))
+        continue;
+
+      $data[] = array(
+        "submission_id" => $row["submission_id"],
+        "field_id"      => $field_id,
+        "field_type_id" => $module_field_type_id,
+        "folder_path"   => $field_settings["folder_path"],
+        "folder_url"    => $field_settings["folder_url"],
+        "filename"      => $row[$col_name]
+      );
+    }
+  }
+
+  return array(
+    "uploaded_files" => $data
+  );
+}
