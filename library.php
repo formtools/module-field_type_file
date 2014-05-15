@@ -98,13 +98,9 @@ function field_type_file__install($module_id)
   	  '{\$LANG.validation_default_rule_required}', 1)
    ");
 
+
   // lastly, add our hooks
-  ft_register_hook("code", "field_type_file", "manage_files", "ft_update_submission", "ft_file_update_submission_hook", 50, true);
-  ft_register_hook("code", "field_type_file", "manage_files", "ft_process_form", "ft_file_process_form_hook", 50, true);
-  ft_register_hook("code", "field_type_file", "manage_files", "ft_api_process_form", "ft_file_api_process_form_hook", 50, true);
-  ft_register_hook("code", "field_type_file", "start", "ft_delete_submission_files", "ft_file_delete_submissions_hook", 50, true);
-  ft_register_hook("code", "field_type_file", "start", "ft_get_uploaded_files", "ft_file_get_uploaded_files_hook", 50, true);
-  ft_register_hook("template", "field_type_file", "head_bottom", "", "ft_file_include_js");
+  ft_file_reset_hooks();
 
   return array(true, "");
 }
@@ -189,6 +185,8 @@ function field_type_file__upgrade($old_version, $new_version)
   	    '{\$LANG.validation_default_rule_required}', 1)
   	");
   }
+
+  ft_file_reset_hooks();
 }
 
 
@@ -493,9 +491,9 @@ function ft_file_delete_file_submission($form_id, $submission_id, $field_id, $fo
   return array($success, $message);
 }
 
+
 /**
  * Our template hook. This includes all required JS for the Edit Submission page.
- *
  */
 function ft_file_include_js($template, $page_data)
 {
@@ -505,6 +503,16 @@ function ft_file_include_js($template, $page_data)
   if ($curr_page != "admin_edit_submission" && $curr_page != "client_edit_submission")
     return;
 
+  echo "<script src=\"$g_root_url/modules/field_type_file/scripts/edit_submission.js?v=2\"></script>\n";
+}
+
+
+/**
+ * Used for any module (e.g. Form Builder) that uses the form fields in a standalone context.
+ */
+function ft_file_include_standalone_js($template, $page_data)
+{
+  global $g_root_url;
   echo "<script src=\"$g_root_url/modules/field_type_file/scripts/edit_submission.js?v=2\"></script>\n";
 }
 
@@ -748,7 +756,6 @@ function ft_file_get_uploaded_files_hook($params)
     if (!$query)
       continue;
 
-
     $field_settings = ft_get_field_settings($field_id);
     while ($row = mysql_fetch_assoc($query))
     {
@@ -770,4 +777,21 @@ function ft_file_get_uploaded_files_hook($params)
   return array(
     "uploaded_files" => $data
   );
+}
+
+
+/**
+ * Called on installation and upgrades.
+ */
+function ft_file_reset_hooks()
+{
+	ft_unregister_module_hooks("field_type_file");
+
+  ft_register_hook("code", "field_type_file", "manage_files", "ft_update_submission", "ft_file_update_submission_hook", 50, true);
+  ft_register_hook("code", "field_type_file", "manage_files", "ft_process_form", "ft_file_process_form_hook", 50, true);
+  ft_register_hook("code", "field_type_file", "manage_files", "ft_api_process_form", "ft_file_api_process_form_hook", 50, true);
+  ft_register_hook("code", "field_type_file", "start", "ft_delete_submission_files", "ft_file_delete_submissions_hook", 50, true);
+  ft_register_hook("code", "field_type_file", "start", "ft_get_uploaded_files", "ft_file_get_uploaded_files_hook", 50, true);
+  ft_register_hook("template", "field_type_file", "head_bottom", "", "ft_file_include_js");
+  ft_register_hook("template", "field_type_file", "standalone_form_fields_head_bottom", "", "ft_file_include_standalone_js");
 }

@@ -43,9 +43,15 @@ $HOOKS = array(
     "function_name"   => "",
     "hook_function"   => "ft_file_include_js",
     "priority"        => "50"
+  ),
+  array(
+    "hook_type"       => "template",
+    "action_location" => "standalone_form_fields_head_bottom",
+    "function_name"   => "",
+    "hook_function"   => "ft_file_include_standalone_js",
+    "priority"        => "50"
   )
 );
-
 $FILES = array(
   "actions.php",
   "database_integrity.php",
