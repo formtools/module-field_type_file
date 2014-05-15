@@ -512,8 +512,21 @@ function ft_file_include_js($template, $page_data)
  */
 function ft_file_include_standalone_js($template, $page_data)
 {
-  global $g_root_url;
-  echo "<script src=\"$g_root_url/modules/field_type_file/scripts/edit_submission.js?v=2\"></script>\n";
+  global $g_root_url, $LANG;
+
+  // this includes the necessary JS for the file upload field type
+  echo <<< END
+  <script src="$g_root_url/modules/field_type_file/scripts/standalone.js"></script>
+  <script>
+  if (typeof g.messages == 'undefined')
+    g.messages = {};
+
+  g.messages["confirm_delete_submission_file"] = "{$LANG["confirm_delete_submission_file"]}";
+  g.messages["phrase_please_confirm"] = "{$LANG["phrase_please_confirm"]}";
+  g.messages["word_yes"] = "{$LANG["word_yes"]}";
+  g.messages["word_no"] = "{$LANG["word_no"]}";
+  </script>
+END;
 }
 
 

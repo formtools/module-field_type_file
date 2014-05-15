@@ -57,14 +57,19 @@ $FILES = array(
   "database_integrity.php",
   "images/",
   "images/file_upload_icon.png",
+  "images/index.html",
   "index.php",
   "lang/",
   "lang/en_us.php",
+  "lang/index.html",
   "library.php",
   "module.php",
   "module_config.php",
   "scripts/",
   "scripts/edit_submission.js",
+  "scripts/index.html",
+  "scripts/standalone.js",
   "templates/",
-  "templates/index.tpl"
+  "templates/index.tpl",
+  "templates/index.html"
 );
