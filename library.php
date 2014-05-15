@@ -44,7 +44,7 @@ function field_type_file__install($module_id)
       resources_css, resources_js)
     VALUES ('no', 'This module may only be edited via the File Upload module.', $module_id, '{\$LANG.word_file}',
       'file', $group_id, 'yes', 'no', 'file', NULL,
-      $next_list_order, 'large,very_large', '',
+      $next_list_order, 'large,very_large', '{if \$VALUE}\r\n  <a href=\"{\$folder_url}/{\$VALUE}\" \r\n    {if \$use_fancybox == \"yes\"}class=\"fancybox\"{/if}>{\$VALUE}</a>\r\n{/if}',
       '<div class=\"cf_file\">\r\n  <input type=\"hidden\" class=\"cf_file_field_id\" value=\"{\$FIELD_ID}\" />\r\n  <div id=\"cf_file_{\$FIELD_ID}_content\" {if !\$VALUE}style=\"display:none\"{/if}>\r\n    <a href=\"{\$folder_url}/{\$VALUE}\" \r\n      {if \$use_fancybox == \"yes\"}class=\"fancybox\"{/if}>{\$VALUE}</a>\r\n    <input type=\"button\" class=\"cf_delete_file\" \r\n      value=\"{\$LANG.phrase_delete_file|upper}\" />\r\n  </div>\r\n  <div id=\"cf_file_{\$FIELD_ID}_no_content\" {if \$VALUE}style=\"display:none\"{/if}>\r\n    <input type=\"file\" name=\"{\$NAME}\" />\r\n  </div>\r\n  <div id=\"file_field_{\$FIELD_ID}_message_id\" class=\"cf_file_message\"></div>\r\n</div>\r\n',
       '', '', '/* all JS for this module is found in /modules/field_type_file/scripts/edit_submission.js */')
     ") or die(mysql_error());
@@ -93,6 +93,8 @@ function field_type_file__install($module_id)
 
   // lastly, add our hooks
   ft_register_hook("code", "field_type_file", "manage_files", "ft_update_submission", "ft_file_update_submission_hook", 50, true);
+  ft_register_hook("code", "field_type_file", "manage_files", "ft_process_form", "ft_file_process_form_hook", 50, true);
+  ft_register_hook("code", "field_type_file", "manage_files", "ft_api_process_form", "ft_file_api_process_form_hook", 50, true);
   ft_register_hook("template", "field_type_file", "head_bottom", "", "ft_file_include_js");
 
   return array(true, "");
@@ -140,6 +142,27 @@ function field_type_file__uninstall($module_id)
 }
 
 
+function field_type_file__upgrade($old_version, $new_version)
+{
+  global $g_table_prefix, $LANG;
+
+  $old_version_info = ft_get_version_info($old_version);
+
+  $field_type_id = ft_get_field_type_id_by_identifier("file");
+  if ($old_version_info["release_date"] < 20110609)
+  {
+    mysql_query("
+      UPDATE {$g_table_prefix}field_types
+      SET    view_field_smarty_markup = '{if \$VALUE}\r\n  <a href=\"{\$folder_url}/{\$VALUE}\" \r\n    {if \$use_fancybox == \"yes\"}class=\"fancybox\"{/if}>{\$VALUE}</a>\r\n{/if}'
+      WHERE  field_type_id = $field_type_id
+    ");
+
+    ft_register_hook("code", "field_type_file", "manage_files", "ft_process_form", "ft_file_process_form_hook", 50, true);
+    ft_register_hook("code", "field_type_file", "manage_files", "ft_api_process_form", "ft_file_api_process_form_hook", 50, true);
+  }
+}
+
+
 /**
  * This hook is called by the ft_update_submission function. It handles all the actual work for uploading a file.
  *
@@ -157,14 +180,23 @@ function ft_file_update_submission_hook($params)
 
   $form_id       = $params["form_id"];
   $submission_id = $params["submission_id"];
+  $module_field_type_id = ft_get_field_type_id_by_identifier("file");
 
   $problem_files = array();
-  $success = true;
-  $message = "";
+
+  $return_info = array(
+    "success" => true,
+    "message" => ""
+  );
+
   foreach ($file_fields as $file_field_info)
   {
-  	$field_id   = $file_field_info["field_info"]["field_id"];
-  	$field_name = $file_field_info["field_info"]["field_name"];
+  	$field_id      = $file_field_info["field_info"]["field_id"];
+  	$field_type_id = $file_field_info["field_info"]["field_type_id"];
+  	$field_name    = $file_field_info["field_info"]["field_name"];
+
+  	if ($field_type_id != $module_field_type_id)
+  	  continue;
 
     // nothing was included in this field, just ignore it
     if (empty($_FILES[$field_name]["name"]))
@@ -172,7 +204,9 @@ function ft_file_update_submission_hook($params)
 
     list($success, $message) = ft_file_upload_submission_file($form_id, $submission_id, $file_field_info);
     if (!$success)
-      $problem_files[] = array($fileinfo["name"], $message);
+      $problem_files[] = array($_FILES[$field_name]["name"], $message);
+    else
+      $return_info["message"] = $message;
   }
 
   if (!empty($problem_files))
@@ -181,13 +215,13 @@ function ft_file_update_submission_hook($params)
     foreach ($problem_files as $problem)
       $message .= "&bull; <b>{$problem[0]}</b>: $problem[1]<br />\n";
 
-    return array(false, $message);
+    $return_info = array(
+      "success" => false,
+      "message" => $message
+    );
   }
 
-  return array(
-    "success" => $success,
-    "message" => $message
-  );
+  return $return_info;
 }
 
 
@@ -246,11 +280,19 @@ function ft_file_upload_submission_file($form_id, $submission_id, $file_field_in
 
   // check file size
   if ($filesize_kb > $file_upload_max_size)
-    return array(false, $LANG["notify_file_too_large"]);
+  {
+  	$placeholders = array(
+  	  "FILESIZE"    => round($filesize_kb, 1),
+  	  "MAXFILESIZE" => $file_upload_max_size
+  	);
+  	$error = ft_eval_smarty_string($LANG["notify_file_too_large"], $placeholders);
+    return array(false, $error);
+  }
 
   // check upload folder is valid and writable
   if (!is_dir($file_upload_dir) || !is_writable($file_upload_dir))
     return array(false, $LANG["notify_invalid_field_upload_folder"]);
+
 
   // check file extension is valid. Note: this is "dumb" - it just tests for the file extension string, not
   // the actual file type based on it's header info [this is done because I want to allow users to permit
@@ -300,7 +342,7 @@ function ft_file_upload_submission_file($form_id, $submission_id, $file_field_in
       {
         // if there was a file previously uploaded in this field, delete it!
         if (!empty($old_filename))
-          @unlink("{$extended_field_info["file_upload_dir"]}/$old_filename");
+          @unlink("$file_upload_dir/$old_filename");
 
         return array(true, $LANG["notify_file_uploaded"], $unique_filename);
       }
@@ -417,7 +459,7 @@ function ft_file_delete_file_submission($form_id, $submission_id, $field_id, $fo
              ");
   }
 
-  extract(ft_process_hooks("end", compact("form_id", "submission_id", "field_id", "force_delete"),
+  extract(ft_process_hook_calls("end", compact("form_id", "submission_id", "field_id", "force_delete"),
     array("success", "message")), EXTR_OVERWRITE);
 
   return array($success, $message);
@@ -439,3 +481,151 @@ function ft_file_include_js($template, $page_data)
   echo "<script src=\"$g_root_url/modules/field_type_file/scripts/edit_submission.js\"></script>\n";
 }
 
+
+/**
+ * This is called by the ft_process_form function. It handles the file upload for all "File" Field types.
+ *
+ * @param array $params
+ */
+function ft_file_process_form_hook($params)
+{
+  global $LANG, $g_query_str_multi_val_separator;
+
+  $file_fields = $params["file_fields"];
+  if (empty($file_fields))
+    return;
+
+  $form_id       = $params["form_id"];
+  $submission_id = $params["submission_id"];
+
+  $module_field_type_id = ft_get_field_type_id_by_identifier("file");
+  $problem_files = array();
+  $redirect_query_params = $params["redirect_query_params"];
+
+  $return_info = array(
+    "success" => true,
+    "message" => "",
+    "redirect_query_params" => $redirect_query_params
+  );
+
+  foreach ($file_fields as $file_field_info)
+  {
+  	$field_id      = $file_field_info["field_info"]["field_id"];
+  	$field_type_id = $file_field_info["field_info"]["field_type_id"];
+  	$field_name    = $file_field_info["field_info"]["field_name"];
+  	$include_on_redirect = $file_field_info["field_info"]["include_on_redirect"];
+
+    if ($module_field_type_id != $field_type_id)
+      continue;
+
+    $field_settings = ft_get_field_settings($field_id);
+    $file_field_info["settings"] = $field_settings;
+
+    // nothing was included in this field, just ignore it
+    if (empty($_FILES[$field_name]["name"]))
+      continue;
+
+    list($success, $message, $filename) = ft_file_upload_submission_file($form_id, $submission_id, $file_field_info);
+    if (!$success)
+      $problem_files[] = array($_FILES[$field_name]["name"], $message);
+    else
+    {
+      $return_info["message"] = $message;
+      if ($include_on_redirect == "yes")
+      {
+        $redirect_query_params[] = "$field_name=" . rawurlencode($filename);
+      }
+    }
+  }
+
+  if (!empty($problem_files))
+  {
+    $message = $LANG["notify_submission_updated_file_problems"] . "<br /><br />";
+    foreach ($problem_files as $problem)
+      $message .= "&bull; <b>{$problem[0]}</b>: $problem[1]<br />\n";
+
+    $return_info = array(
+      "success" => false,
+      "message" => $message,
+      "redirect_query_params" => $redirect_query_params
+    );
+  }
+  else
+  {
+    $return_info["redirect_query_params"] = $redirect_query_params;
+  }
+
+  return $return_info;
+}
+
+
+/**
+ * This is called by the ft_process_form function. It handles the file upload for all "File" Field types.
+ *
+ * @param array $params
+ */
+function ft_file_api_process_form_hook($params)
+{
+  global $LANG, $g_query_str_multi_val_separator;
+
+  $file_fields = $params["file_fields"];
+  if (empty($file_fields))
+    return;
+
+  $form_id       = $params["form_id"];
+  $submission_id = $params["submission_id"];
+  $namespace     = $params["namespace"];
+
+  $module_field_type_id = ft_get_field_type_id_by_identifier("file");
+  $problem_files = array();
+
+  $return_info = array(
+    "success" => true,
+    "message" => ""
+  );
+
+  foreach ($file_fields as $file_field_info)
+  {
+  	$field_type_id = $file_field_info["field_info"]["field_type_id"];
+    if ($module_field_type_id != $field_type_id)
+      continue;
+
+  	$field_id      = $file_field_info["field_info"]["field_id"];
+  	$field_name    = $file_field_info["field_info"]["field_name"];
+  	$include_on_redirect = $file_field_info["field_info"]["include_on_redirect"];
+    $field_settings = ft_get_field_settings($field_id);
+    $file_field_info["settings"] = $field_settings;
+
+    // nothing was included in this field, just ignore it
+    if (empty($_FILES[$field_name]["name"]))
+      continue;
+
+    list($success, $message, $filename) = ft_file_upload_submission_file($form_id, $submission_id, $file_field_info);
+    if (!$success)
+      $problem_files[] = array($_FILES[$field_name]["name"], $message);
+    else
+    {
+      $return_info["message"] = $message;
+      $curr_file_info = array(
+        "filename"        => $filename,
+        "file_upload_dir" => $file_field_info["settings"]["folder_path"],
+        "file_upload_url" => $file_field_info["settings"]["folder_url"]
+      );
+      $_SESSION[$namespace][$field_name] = $curr_file_info;
+    }
+  }
+
+  if (!empty($problem_files))
+  {
+    $message = $LANG["notify_submission_updated_file_problems"] . "<br /><br />";
+    foreach ($problem_files as $problem)
+      $message .= "&bull; <b>{$problem[0]}</b>: $problem[1]<br />\n";
+
+    $return_info = array(
+      "success" => false,
+      "message" => $message
+    );
+  }
+
+  return $return_info;
+}
