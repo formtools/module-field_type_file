@@ -1,6 +1,5 @@
 /**
- * Contains all JS for the file upload module when used in a standalone context, outside of Form Tools. Right now
- * this is pretty much just for the Form Builder.
+ * Contains all JS for the file upload module.
  */
 
 $(function() {
@@ -20,29 +19,6 @@ files_ns.confirm_delete_dialog = $("<div id=\"confirm_delete_dialog\"></div>");
 
 
 /**
- * Checks the file field has a value in it. This is used instead of the default RSV "required" rule
- * because if a file's already uploaded, it needs to pass validation.
- */
-files_ns.check_required = function() {
-  var errors = [];
-  for (var i=0; i<rsv_custom_func_errors.length; i++) {
-    if (rsv_custom_func_errors[i].func == "files_ns.check_required") {
-      var field    = document.edit_submission_form[rsv_custom_func_errors[i].field];
-      var field_id = rsv_custom_func_errors[i].field_id;
-      var has_file = ($("#cf_file_" + field_id + "_content").css("display") == "block" && $("#cf_file_" + field_id + "_content").html() != "");
-      if (!has_file && !field.value) {
-        errors.push([field, rsv_custom_func_errors[i].err]);
-      }
-    }
-  }
-  if (errors.length) {
-    return errors;
-  }
-  return true;
-}
-
-
-/**
  * Deletes a submission file.
  *
  * @param field_id
@@ -52,11 +28,12 @@ files_ns.delete_submission_file = function(field_id, force_delete) {
   var page_url = g.root_url + "/modules/field_type_file/actions.php";
 
   var data = {
-    action:            "delete_submission_file_standalone",
-    field_id:          field_id,
-    published_form_id: $("#form_tools_published_form_id").val(),
-    return_vars:       { target_message_id: "file_field_" + field_id + "_message_id", field_id: field_id },
-    force_delete:      force_delete
+    action:        "delete_submission_file",
+    field_id:      field_id,
+    form_id:       $("#form_id").val(),
+    submission_id: $("#submission_id").val(),
+    return_vars:   { target_message_id: "file_field_" + field_id + "_message_id", field_id: field_id },
+    force_delete:  force_delete
   };
 
   var confirm_delete = true;
