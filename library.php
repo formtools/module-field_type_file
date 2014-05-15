@@ -95,6 +95,7 @@ function field_type_file__install($module_id)
   ft_register_hook("code", "field_type_file", "manage_files", "ft_update_submission", "ft_file_update_submission_hook", 50, true);
   ft_register_hook("code", "field_type_file", "manage_files", "ft_process_form", "ft_file_process_form_hook", 50, true);
   ft_register_hook("code", "field_type_file", "manage_files", "ft_api_process_form", "ft_file_api_process_form_hook", 50, true);
+  ft_register_hook("code", "field_type_file", "start", "ft_delete_submission_files", "ft_file_delete_submissions_hook", 50, true);
   ft_register_hook("template", "field_type_file", "head_bottom", "", "ft_file_include_js");
 
   return array(true, "");
@@ -159,6 +160,11 @@ function field_type_file__upgrade($old_version, $new_version)
 
     ft_register_hook("code", "field_type_file", "manage_files", "ft_process_form", "ft_file_process_form_hook", 50, true);
     ft_register_hook("code", "field_type_file", "manage_files", "ft_api_process_form", "ft_file_api_process_form_hook", 50, true);
+  }
+
+  if ($old_version_info["release_date"] < 20110612)
+  {
+    ft_register_hook("code", "field_type_file", "start", "ft_delete_submission_files", "ft_file_delete_submissions_hook", 50, true);
   }
 }
 
@@ -426,7 +432,7 @@ function ft_file_delete_file_submission($form_id, $submission_id, $field_id, $fo
           $success = false;
           $update_database_record = false;
           $replacements = array("js_link" => "return files_ns.delete_submission_file($field_id, true)");
-          $message = ft_eval_smarty_string($LANG["notify_file_not_deleted_no_exist"], $replacements);
+          $message = ft_eval_smarty_string($LANG["notify_file_not_deleted_no_exist"] . "($file_folder/$file)", $replacements);
         }
         else if (is_file("$file_folder/$file") && (!is_readable("$file_folder/$file") || !is_writable("$file_folder/$file")))
         {
@@ -629,3 +635,64 @@ function ft_file_api_process_form_hook($params)
 
   return $return_info;
 }
+
+
+/**
+ * Called whenever a submission or submissions are deleted. It's the hook for the ft_delete_submission_files
+ * Core function.
+ *
+ * @param array $params this contains all the details passed by the hook.
+ */
+function ft_file_delete_submissions_hook($params)
+{
+  $L = ft_get_module_lang_file_contents("field_type_file");
+
+  $form_id         = $params["form_id"];
+  $file_field_info = $params["file_field_info"];
+
+  $module_field_type_id = ft_get_field_type_id_by_identifier("file");
+  $problem_files = array();
+  foreach ($file_field_info as $info)
+  {
+    if ($info["field_type_id"] != $module_field_type_id)
+      continue;
+
+    $field_id      = $info["field_id"];
+    $submission_id = $info["submission_id"];
+    $filename      = $info["filename"];
+
+    $field_settings = ft_get_field_settings($field_id);
+    $folder = $field_settings["folder_path"];
+
+    if (!@unlink("$folder/$filename"))
+    {
+      if (!is_file("$folder/$filename"))
+      {
+      	$problems[] = array(
+      	  "filename" => $filename,
+      	  "error"    => ft_eval_smarty_string($L["notify_file_not_deleted_no_exist"], array("folder" => $folder))
+      	);
+      }
+      else if (is_file("$folder/$file") && (!is_readable("$folder/$file") || !is_writable("$folder/$file")))
+      {
+      	$problems[] = array(
+      	  "filename" => $filename,
+      	  "error"    => ft_eval_smarty_string($L["notify_file_not_deleted_permissions"], array("folder" => $folder))
+      	);
+      }
+      else
+      {
+      	$problems[] = array(
+      	  "filename" => $filename,
+      	  "error"    => ft_eval_smarty_string($L["notify_file_not_deleted_unknown_error"], array("folder" => $folder))
+      	);
+      }
+    }
+  }
+
+  if (empty($problems))
+    return array(true, "");
+  else
+    return array(false, $problems);
+}
+
