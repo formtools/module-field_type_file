@@ -45,7 +45,7 @@ function field_type_file__install($module_id)
     VALUES ('no', 'This module may only be edited via the File Upload module.', $module_id, '{\$LANG.word_file}',
       'file', $group_id, 'yes', 'no', 'file', NULL,
       $next_list_order, 'large,very_large', '',
-      '{* okay! let''s figure out all the necessary variables: what''s been overwritten, and what hasn''t. *}\n{assign var=file_upload_dir value=\$SETTINGS.file_upload_dir}\n{if \$FOLDERPATH}{assign var=file_upload_dir value=\$FOLDERPATH}{/if}\n{assign var=file_upload_url value=\$SETTINGS.file_upload_url}\n\n{if \$FOLDERURL}(({\$FOLDERURL})){assign var=file_upload_url value=\$FOLDERURL}{/if}\n\n{assign var=file_upload_max_size value=\$SETTINGS.file_upload_max_size}\n{if \$MAXSIZE}{assign var=file_upload_max_size value=\$MAXSIZE}{/if}\n\n{assign var=file_upload_filetypes value=\$SETTINGS.file_upload_filetypes}\n{if \$FILETYPES}{assign var=file_upload_filetypes value=\$FILETYPES}{/if}\n\n<div class=\"cf_file\">\n  <input type=\"hidden\" class=\"cf_file_field_id\" value=\"{\$FIELD_ID}\" />\n  <div id=\"cf_file_{\$FIELD_ID}_content\" {if !\$VALUE}style=\"display:none\"{/if}>\n    <a href=\"{\$file_upload_url}/{\$VALUE}\" \n      {if \$USEFANCYBOX == \"yes\"}class=\"fancybox\"{/if}>{\$VALUE}</a>\n    <input type=\"button\" class=\"cf_delete_file\" \n      value=\"{\$LANG.phrase_delete_file|upper}\" />\n  </div>\n\n  <div id=\"cf_file_{\$FIELD_ID}_no_content\"\n    {if \$VALUE}style=\"display:none\"{/if}>\n    <input type=\"file\" name=\"{\$NAME}\" />\n  </div>\n\n  <div id=\"file_field_{\$FIELD_ID}_message_id\" class=\"cf_file_message\"></div>\n</div>\n',
+      '<div class=\"cf_file\">\r\n  <input type=\"hidden\" class=\"cf_file_field_id\" value=\"{\$FIELD_ID}\" />\r\n  <div id=\"cf_file_{\$FIELD_ID}_content\" {if !\$VALUE}style=\"display:none\"{/if}>\r\n    <a href=\"{\$folder_url}/{\$VALUE}\" \r\n      {if \$use_fancybox == \"yes\"}class=\"fancybox\"{/if}>{\$VALUE}</a>\r\n    <input type=\"button\" class=\"cf_delete_file\" \r\n      value=\"{\$LANG.phrase_delete_file|upper}\" />\r\n  </div>\r\n  <div id=\"cf_file_{\$FIELD_ID}_no_content\" {if \$VALUE}style=\"display:none\"{/if}>\r\n    <input type=\"file\" name=\"{\$NAME}\" />\r\n  </div>\r\n  <div id=\"file_field_{\$FIELD_ID}_message_id\" class=\"cf_file_message\"></div>\r\n</div>\r\n',
       '', '', '/* all JS for this module is found in /modules/field_type_file/scripts/edit_submission.js */')
     ") or die(mysql_error());
 
@@ -68,30 +68,17 @@ function field_type_file__install($module_id)
   $query = mysql_query("
     INSERT INTO {$g_table_prefix}field_type_settings (field_type_id, field_label, field_setting_identifier, field_type,
       field_orientation, default_value_type, default_value, list_order)
-    VALUES ($field_type_id, 'Use Custom Upload Folder', 'custom_upload_folder', 'radios', 'horizontal', 'static', 'no', 2)
-  ");
-  $setting_id = mysql_insert_id();
-  $query = mysql_query("
-    INSERT INTO {$g_table_prefix}field_type_setting_options (setting_id, option_text, option_value, option_order, is_new_sort_group)
-    VALUES
-      ($setting_id, 'Yes', 'yes', 1, 'yes'),
-      ($setting_id, 'No', 'no', 2, 'yes')
-  ");
-
-  $query = mysql_query("
-    INSERT INTO {$g_table_prefix}field_type_settings (field_type_id, field_label, field_setting_identifier, field_type,
-      field_orientation, default_value_type, default_value, list_order)
-    VALUES ($field_type_id, '- Folder Path', 'folder_path', 'textbox', 'na', 'dynamic', 'file_upload_dir,core', 3)
+    VALUES ($field_type_id, 'Folder Path', 'folder_path', 'textbox', 'na', 'dynamic', 'file_upload_dir,core', 3)
   ");
   $query = mysql_query("
     INSERT INTO {$g_table_prefix}field_type_settings (field_type_id, field_label, field_setting_identifier, field_type,
       field_orientation, default_value_type, default_value, list_order)
-    VALUES ($field_type_id, '- Folder URL', 'folder_url', 'textbox', 'na', 'dynamic', 'file_upload_url,core', 4)
+    VALUES ($field_type_id, 'Folder URL', 'folder_url', 'textbox', 'na', 'dynamic', 'file_upload_url,core', 4)
   ");
   $query = mysql_query("
     INSERT INTO {$g_table_prefix}field_type_settings (field_type_id, field_label, field_setting_identifier, field_type,
       field_orientation, default_value_type, default_value, list_order)
-    VALUES ($field_type_id, '- Permitted File Types', 'permitted_file_types', 'textbox', 'na', 'dynamic', 'file_upload_filetypes,core', 5)
+    VALUES ($field_type_id, 'Permitted File Types', 'permitted_file_types', 'textbox', 'na', 'dynamic', 'file_upload_filetypes,core', 5)
   ");
   $query = mysql_query("
     INSERT INTO {$g_table_prefix}field_type_settings (field_type_id, field_label, field_setting_identifier, field_type,
