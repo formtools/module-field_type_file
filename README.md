@@ -9,7 +9,7 @@ Functionally, this module provides all the same options as 2.0.x releases, only 
 
 ### Documentation
 
-[http://modules.formtools.org/custom_fields/](http://modules.formtools.org/custom_fields/)
+[http://modules.formtools.org/field_type_file/](http://modules.formtools.org/field_type_file/)
 
 ### Form Tools Extensions
 
