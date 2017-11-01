@@ -1,4 +1,4 @@
-## module-file_upload_field
+## File Upload Module
 
 The File Upload module was written for the 2.1.x Form Tools Core to provide a mechanism to upload files through your forms In 2.0.x releases, this field type was part of the Core code, but it was moved to a separate module to accommodate the new field type structure. Why is this better?
 
@@ -9,9 +9,9 @@ Functionally, this module provides all the same options as 2.0.x releases, only 
 
 ### Documentation
 
-[http://modules.formtools.org/field_type_file/](http://modules.formtools.org/field_type_file/)
+[https://docs.formtools.org/modules/field_type_file/](https://docs.formtools.org/modules/field_type_file/)
 
 ### Form Tools Extensions
 
-For further information about Form Tools extensions, check out the following link:
-[http://www.formtools.org/extensions.php](http://www.formtools.org/extensions.php)
+For further information about Form Tools modules, check out:
+[https://modules.formtools.org](https://modules.formtools.org)
