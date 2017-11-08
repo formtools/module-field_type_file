@@ -1,4 +1,4 @@
-{include file='modules_header.tpl'}
+{ft_include file='modules_header.tpl'}
 
   <table cellpadding="0" cellspacing="0">
   <tr>
@@ -11,11 +11,11 @@
   </tr>
   </table>
 
-  {include file="messages.tpl"}
+  {ft_include file="messages.tpl"}
 
   <div class="margin_bottom_large">
     This module doesn't have a configuration section. Use the <a href="{$g_root_url}/admin/settings/index.php?page=files">Settings -> Files</a>
     page to define the default file upload settings. You can override those settings by editing any individual form field.
   </div>
 
-{include file='modules_footer.tpl'}
+{ft_include file='modules_footer.tpl'}
