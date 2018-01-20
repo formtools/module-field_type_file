@@ -20,7 +20,7 @@ $HOOKS = array(
     array(
         "hook_type"       => "code",
         "action_location" => "manage_files",
-        "function_name"   => "FormTools\\API::processFormSubmission",
+        "function_name"   => "FormTools\\API->processFormSubmission",
         "hook_function"   => "apiProcessFormSubmissionHook",
         "priority"        => "50"
     ),
@@ -55,24 +55,24 @@ $HOOKS = array(
 );
 
 $FILES = array(
-    "actions.php",
     "code",
     "code/Module.class.php",
     "images/",
     "images/file_upload_icon.png",
     "images/index.html",
-    "index.php",
     "lang/",
     "lang/en_us.php",
     "lang/index.html",
-    "library.php",
-    "module_config.php",
-    "README.md",
     "scripts/",
     "scripts/edit_submission.js",
     "scripts/index.html",
     "scripts/standalone.js",
     "templates/",
     "templates/index.tpl",
-    "templates/index.html"
+    "templates/index.html",
+    "actions.php",
+    "index.php",
+    "library.php",
+    "module_config.php",
+    "README.md",
 );

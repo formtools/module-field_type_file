@@ -59,7 +59,6 @@ files_ns.delete_submission_file = function(field_id, force_delete) {
     force_delete:      force_delete
   };
 
-  var confirm_delete = true;
   if (!force_delete) {
     ft.create_dialog({
       dialog:     files_ns.confirm_delete_dialog,

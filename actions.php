@@ -4,8 +4,6 @@ require_once("../../global/library.php");
 
 use FormTools\Modules;
 
-$module = Modules::initModulePage("client");
-
 
 switch ($request["action"]) {
 
@@ -14,6 +12,8 @@ switch ($request["action"]) {
     // it prevents a potential hacker exploiting this function here. Instead they'd have to set the sessions by another
     // route which is trickier
     case "delete_submission_file":
+        $module = Modules::initModulePage("client");
+
         $form_id       = $request["form_id"];
         $submission_id = $request["submission_id"];
         $field_id      = $request["field_id"];
@@ -32,6 +32,8 @@ switch ($request["action"]) {
     // the logged-in context: it pulls the form ID and submission ID from sessions instead of from the page (which could
     // be hacked)
     case "delete_submission_file_standalone":
+        $module = Modules::initModulePage();
+
         $published_form_id = (isset($request["published_form_id"])) ? $request["published_form_id"] : "";
 
         if (empty($published_form_id)) {
@@ -48,7 +50,7 @@ switch ($request["action"]) {
 
         list ($success, $message) = $module->deleteFileSubmission($form_id, $submission_id, $field_id, $force_delete);
         output_json_with_return_vars(array(
-            "success" => 0,
+            "success" => 1,
             "message" => $message
         ));
         break;

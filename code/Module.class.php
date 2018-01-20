@@ -21,8 +21,8 @@ class Module extends FormToolsModule
     protected $author = "Ben Keen";
     protected $authorEmail = "ben.keen@gmail.com";
     protected $authorLink = "https://formtools.org";
-    protected $version = "2.0.1";
-    protected $date = "2017-11-07";
+    protected $version = "2.0.2";
+    protected $date = "2018-01-20";
     protected $originLanguage = "en_us";
 
     protected $nav = array(
@@ -107,7 +107,7 @@ END;
         ");
         $db->bindAll(array(
             "is_editable" => "no",
-            "non_editable_info" => "This module may only be edited via the File Upload module",
+            "non_editable_info" => "This module can only be edited via the File Upload module.",
             "managed_by_module_id" => $module_id,
             "field_type_name" => "{\$LANG.word_file}",
             "field_type_identifier" => "file",
@@ -187,6 +187,12 @@ END;
         }
 
         return array(true, "");
+    }
+
+
+    public function upgrade($module_id, $old_module_version)
+    {
+        $this->resetHooks();
     }
 
 
@@ -611,6 +617,7 @@ END;
     {
         $LANG = Core::$L;
 
+        // if the form being submitted doesn't contain any form fields we do nothing
         $file_fields = $params["file_fields"];
         if (empty($file_fields)) {
             return;
@@ -797,7 +804,7 @@ END;
 
         Hooks::registerHook("code", "field_type_file", "manage_files", "FormTools\\Submissions::updateSubmission", "updateSubmissionHook", 50, true);
         Hooks::registerHook("code", "field_type_file", "manage_files", "FormTools\\Submissions::processFormSubmission", "processFormSubmissionHook", 50, true);
-        Hooks::registerHook("code", "field_type_file", "manage_files", "FormTools\\API::processFormSubmission", "apiProcessFormSubmissionHook", 50, true);
+        Hooks::registerHook("code", "field_type_file", "manage_files", "FormTools\\API->processFormSubmission", "apiProcessFormSubmissionHook", 50, true);
         Hooks::registerHook("code", "field_type_file", "start", "FormTools\\Files::deleteSubmissionFiles", "deleteSubmissionsHook", 50, true);
         Hooks::registerHook("code", "field_type_file", "start", "FormTools\\Fields::getUploadedFiles", "getUploadedFilesHook", 50, true);
         Hooks::registerHook("template", "field_type_file", "head_bottom", "", "includeJs");
