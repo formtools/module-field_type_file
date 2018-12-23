@@ -21,14 +21,13 @@ class Module extends FormToolsModule
 	protected $author = "Ben Keen";
 	protected $authorEmail = "ben.keen@gmail.com";
 	protected $authorLink = "https://formtools.org";
-	protected $version = "2.0.2";
+	protected $version = "2.1.0";
 	protected $date = "2018-01-20";
 	protected $originLanguage = "en_us";
 
 	protected $nav = array(
 		"module_name" => array("index.php", false)
 	);
-
 
 	private $field_settings = array(
 		array(
@@ -180,7 +179,7 @@ END;
             value="{\$LANG.phrase_delete_file|upper}" />
     </div>
     <div id="cf_file_{\$FIELD_ID}_no_content" {if \$VALUE}style="display:none"{/if}>
-        <input type="file" name="{\$NAME}" />
+        <input type="file" name="{\$NAME}{if \$multiple_files == "yes"}[]{/if}" {if \$multiple_files == "yes"}multiple="multiple"{/if}" />
     </div>
     <div id="file_field_{\$FIELD_ID}_message_id" class="cf_file_message"></div>
 </div>
@@ -251,6 +250,7 @@ END;
 	}
 
 
+	// TODO update smarty markup with update
 	public function upgrade($module_id, $old_module_version)
 	{
 		$this->resetHooks();
@@ -307,9 +307,6 @@ END;
 					echo $e->getMessage();
 					exit;
 				}
-
-				echo "setting ID $setting_id";
-
 			} else {
 				$setting_id = FieldTypes::addFieldTypeSetting(
 					$field_type_id, $setting_info["field_label"], $setting_info["field_setting_identifier"],
@@ -336,9 +333,6 @@ END;
 
 			$list_order++;
 		}
-
-		echo "over.";
-		exit;
 
 		$db->query("
             INSERT INTO {PREFIX}field_type_validation_rules (field_type_id, rsv_rule, rule_label,
