@@ -29,7 +29,51 @@ class Module extends FormToolsModule
 		"module_name" => array("index.php", false)
 	);
 
-	private $field_settings = array(
+	private static $fieldTypeRecordMap = array(
+		"is_editable" => "no",
+		"non_editable_info" => "This module can only be edited via the File Upload module.",
+		"field_type_name" => "{\$LANG.word_file}",
+		"field_type_identifier" => "file",
+		"is_file_field" => "yes",
+		"is_date_field" => "no",
+		"raw_field_type_map" => "file",
+		"raw_field_type_map_multi_select_id" => null,
+		"compatible_field_sizes" => "large,very_large",
+		"view_field_rendering_type" => "smarty",
+		"view_field_php_function_source" => "core",
+		"view_field_php_function" => "",
+		"php_processing" => "",
+		"resources_css" => "",
+		"resources_js" => "/* all JS for this module is found in /modules/field_type_file/scripts/edit_submission.js */"
+	);
+
+	private static $viewFieldSmartyMarkup = <<< END
+{if \$VALUE}
+    <a href="{\$folder_url}/{\$VALUE}"
+    {if \$use_fancybox == "yes"}class="fancybox"{/if}>{\$VALUE}</a>
+{/if}
+END;
+
+	private static $editFieldSmartyMarkup = <<< END
+<div class="cf_file">
+    <input type="hidden" class="cf_file_field_id" value="{\$FIELD_ID}" />
+    <div id="cf_file_{\$FIELD_ID}_content" {if !\$VALUE}style="display:none"{/if}>
+        <a href="{\$folder_url}/{\$VALUE}" 
+            {if \$use_fancybox == "yes"}class="fancybox"{/if}>{\$VALUE}</a>
+        <input type="button" class="cf_delete_file" 
+            value="{\$LANG.phrase_delete_file|upper}" />
+    </div>
+    <div id="cf_file_{\$FIELD_ID}_no_content" {if \$VALUE}style="display:none"{/if}>
+        <input type="file" name="{\$NAME}{if \$multiple_files == "yes"}[]{/if}" {if \$multiple_files == "yes"}multiple="multiple"{/if}" />
+    </div>
+    <div id="file_field_{\$FIELD_ID}_message_id" class="cf_file_message"></div>
+</div>
+{if \$comments}
+    <div class="cf_field_comments">{\$comments}</div>
+{/if}
+END;
+
+	private $fieldSettings = array(
 		array(
 			"field_label" => "Open link with Fancybox",
 			"field_setting_identifier" => "use_fancybox",
@@ -162,67 +206,7 @@ class Module extends FormToolsModule
 
 		$next_list_order = $db->fetch(PDO::FETCH_COLUMN) + 1;
 
-		$view_field_smarty_markup = <<< END
-{if \$VALUE}
-    <a href="{\$folder_url}/{\$VALUE}"
-    {if \$use_fancybox == "yes"}class="fancybox"{/if}>{\$VALUE}</a>
-{/if}
-END;
-
-		$edit_field_smarty_markup = <<< END
-<div class="cf_file">
-    <input type="hidden" class="cf_file_field_id" value="{\$FIELD_ID}" />
-    <div id="cf_file_{\$FIELD_ID}_content" {if !\$VALUE}style="display:none"{/if}>
-        <a href="{\$folder_url}/{\$VALUE}" 
-            {if \$use_fancybox == "yes"}class="fancybox"{/if}>{\$VALUE}</a>
-        <input type="button" class="cf_delete_file" 
-            value="{\$LANG.phrase_delete_file|upper}" />
-    </div>
-    <div id="cf_file_{\$FIELD_ID}_no_content" {if \$VALUE}style="display:none"{/if}>
-        <input type="file" name="{\$NAME}{if \$multiple_files == "yes"}[]{/if}" {if \$multiple_files == "yes"}multiple="multiple"{/if}" />
-    </div>
-    <div id="file_field_{\$FIELD_ID}_message_id" class="cf_file_message"></div>
-</div>
-{if \$comments}
-    <div class="cf_field_comments">{\$comments}</div>
-{/if}
-END;
-
-		$db->query("
-            INSERT INTO {PREFIX}field_types (is_editable, non_editable_info, managed_by_module_id, field_type_name,
-                field_type_identifier, group_id, is_file_field, is_date_field, raw_field_type_map, raw_field_type_map_multi_select_id,
-                list_order, compatible_field_sizes, view_field_rendering_type, view_field_php_function_source, view_field_php_function,
-                view_field_smarty_markup, edit_field_smarty_markup, php_processing, resources_css, resources_js)
-            VALUES (:is_editable, :non_editable_info, :managed_by_module_id, :field_type_name, :field_type_identifier, :group_id,
-                :is_file_field, :is_date_field, :raw_field_type_map, :raw_field_type_map_multi_select_id, :list_order,
-                :compatible_field_sizes, :view_field_rendering_type, :view_field_php_function_source, :view_field_php_function,
-                :view_field_smarty_markup, :edit_field_smarty_markup, :php_processing, :resources_css, :resources_js)
-        ");
-		$db->bindAll(array(
-			"is_editable" => "no",
-			"non_editable_info" => "This module can only be edited via the File Upload module.",
-			"managed_by_module_id" => $module_id,
-			"field_type_name" => "{\$LANG.word_file}",
-			"field_type_identifier" => "file",
-			"group_id" => $group_id,
-			"is_file_field" => "yes",
-			"is_date_field" => "no",
-			"raw_field_type_map" => "file",
-			"raw_field_type_map_multi_select_id" => null,
-			"list_order" => $next_list_order,
-			"compatible_field_sizes" => "large,very_large",
-			"view_field_rendering_type" => "smarty",
-			"view_field_php_function_source" => "core",
-			"view_field_php_function" => "",
-			"view_field_smarty_markup" => $view_field_smarty_markup,
-			"edit_field_smarty_markup" => $edit_field_smarty_markup,
-			"php_processing" => "",
-			"resources_css" => "",
-			"resources_js" => "/* all JS for this module is found in /modules/field_type_file/scripts/edit_submission.js */"
-		));
-		$db->execute();
-		$field_type_id = $db->getInsertId();
-
+		$field_type_id = $this->addFieldType($module_id, $group_id, $next_list_order);
 		$this->installOrUpdateFieldTypeSettings($field_type_id);
 
 		// lastly, add our hooks
@@ -250,13 +234,13 @@ END;
 	}
 
 
-	// TODO update smarty markup with update
 	public function upgrade($module_id, $old_module_version)
 	{
-		$this->resetHooks();
+		$this->updateFieldType();
 
 		$field_type_info = FieldTypes::getFieldTypeByIdentifier("file");
 		$this->installOrUpdateFieldTypeSettings($field_type_info["field_type_id"]);
+		$this->resetHooks();
 	}
 
 
@@ -271,7 +255,7 @@ END;
 		}
 
 		$list_order = 1;
-		foreach ($this->field_settings as $setting_info) {
+		foreach ($this->fieldSettings as $setting_info) {
 			$setting_identifier = $setting_info["field_setting_identifier"];
 
 			// if the field type already exists, update it
@@ -315,51 +299,18 @@ END;
 				);
 			}
 
-			$db->query("
-				DELETE FROM {PREFIX}field_type_setting_options
-				WHERE setting_id = :setting_id 
-			");
-			$db->bind("setting_id", $setting_id);
-			$db->execute();
-
-			if (!empty($setting_info["settings"])) {
-				$data = array();
-				foreach ($setting_info["settings"] as $setting) {
-					$setting["setting_id"] = $setting_id;
-					$data[] = $setting;
-				}
-				FieldTypes::addFieldTypeSettingOptions($data);
-			}
-
+			$this->resetFieldSettingOptions($setting_id, $setting_info["settings"]);
 			$list_order++;
 		}
 
-		$db->query("
-            INSERT INTO {PREFIX}field_type_validation_rules (field_type_id, rsv_rule, rule_label,
-                rsv_field_name, custom_function, custom_function_required, default_error_message, list_order)
-            VALUES (:field_type_id, :rsv_rule, :rule_label, :rsv_field_name, :custom_function,
-                :custom_function_required, :default_error_message, :list_order)
-        ");
-		$db->bindAll(array(
-			"field_type_id" => $field_type_id,
-			"rsv_rule" => "function",
-			"rule_label" => "{\$LANG.word_required}",
-			"rsv_field_name" => "",
-			"custom_function" => "files_ns.check_required",
-			"custom_function_required" => "yes",
-			"default_error_message" => "{\$LANG.validation_default_rule_required}",
-			"list_order" => 1
-		));
-		$db->execute();
+		$this->resetValidationRules($field_type_id);
 	}
 
 
 	/**
-	 * Code Hook: Submissions::updateSubmission
-	 *
-	 * It handles all the actual work for uploading a file.
-	 *
-	 * @param array $params
+	 * Handles all the actual work for uploading a file.
+	 * @param $params
+	 * @return array|void
 	 */
 	public function updateSubmissionHook($params)
 	{
@@ -439,7 +390,7 @@ END;
 	{
 		$db = Core::$db;
 		$LANG = Core::$L;
-		$char_whitelist = Core::getFilenameCharWhitelist();
+
 
 		// get the column name and upload folder for this field
 		$col_name = $file_field_info["field_info"]["col_name"];
@@ -449,74 +400,67 @@ END;
 			return array(false, $LANG["notify_submission_no_field_id"]);
 		}
 
-		// clean up the filename according to the whitelist chars
+		$is_multiple_files = $file_field_info["settings"]["multiple_files"];
 		$field_name = $file_field_info["field_info"]["field_name"];
-		$fileinfo = $_FILES[$field_name];
-
-		$filename_parts = explode(".", $fileinfo["name"]);
-		$extension = $filename_parts[count($filename_parts) - 1];
-		array_pop($filename_parts);
-		$filename_without_extension = implode(".", $filename_parts);
-		$valid_chars = preg_quote($char_whitelist);
-		$filename_without_ext_clean = preg_replace("/[^$valid_chars]/", "", $filename_without_extension);
-
-		// unlikely, but...!
-		if (empty($filename_without_ext_clean)) {
-			$filename_without_ext_clean = "file";
-		}
-
-		$filename = $filename_without_ext_clean . "." . $extension;
-
-		$tmp_filename = $fileinfo["tmp_name"];
-		$filesize = $fileinfo["size"]; // always in BYTES
-		$filesize_kb = $filesize / 1000;
-
-		// pull a couple of values out of the field's settings (these are custom to the field)
 		$file_upload_max_size = $file_field_info["settings"]["max_file_size"];
 		$file_upload_dir = $file_field_info["settings"]["folder_path"];
 		$permitted_file_types = $file_field_info["settings"]["permitted_file_types"];
-
-		// check file size
-		if ($filesize_kb > $file_upload_max_size) {
-			$placeholders = array(
-				"FILESIZE" => round($filesize_kb, 1),
-				"MAXFILESIZE" => $file_upload_max_size
-			);
-			$error = General::evalSmartyString($LANG["notify_file_too_large"], $placeholders);
-			return array(false, $error);
-		}
 
 		// check upload folder is valid and writable
 		if (!is_dir($file_upload_dir) || !is_writable($file_upload_dir)) {
 			return array(false, $LANG["notify_invalid_field_upload_folder"]);
 		}
 
-		// check file extension is valid. Note: this is "dumb" - it just tests for the file extension string, not
-		// the actual file type based on it's header info [this is done because I want to allow users to permit
-		// uploading of any file types, and I can't know about all header types]
-		$is_valid_extension = true;
-		if (!empty($permitted_file_types)) {
-			$is_valid_extension = false;
-			$raw_extensions = explode(",", $permitted_file_types);
+		$fileinfo = $this->extractFileUploadInfo($is_multiple_files, $field_name, $_FILES);
 
-			foreach ($raw_extensions as $ext) {
-				// remove whitespace and periods
-				$clean_extension = str_replace(".", "", trim($ext));
+		// find out if there was already a file/files uploaded in this field. We make a note of this so that
+		// in case the new file upload is successful, we automatically delete the old file
+		$submission_info = Submissions::getSubmissionInfo($form_id, $submission_id);
 
-				if (preg_match("/$clean_extension$/i", $filename)) {
-					$is_valid_extension = true;
+		$errors = array();
+		foreach ($fileinfo as $row) {
+
+			// check file size
+			if ($row["filesize"] > $file_upload_max_size) {
+				$placeholders = array(
+					"FILESIZE" => round($row["filesize"], 1),
+					"MAXFILESIZE" => $file_upload_max_size
+				);
+
+				// TODO if MULTI, need better error message
+				$error = General::evalSmartyString($LANG["notify_file_too_large"], $placeholders);
+				$errors[] = $error;
+				continue;
+			}
+
+			// check file extension is valid. Note: this is "dumb" - it just tests for the file extension string, not
+			// the actual file type based on it's header info [this is done because I want to allow users to permit
+			// uploading of any file types, and I can't know about all header types]
+			$is_valid_extension = true;
+			if (!empty($permitted_file_types)) {
+				$is_valid_extension = false;
+				$raw_extensions = explode(",", $permitted_file_types);
+
+				foreach ($raw_extensions as $ext) {
+					// remove whitespace and periods
+					$clean_extension = str_replace(".", "", trim($ext));
+
+					if (preg_match("/$clean_extension$/i", $row["filename"])) {
+						$is_valid_extension = true;
+					}
 				}
+			}
+
+			// not a valid extension - inform the user
+			if (!$is_valid_extension) {
+				// TODO error cleanup for MULTI
+				$errors[] = $LANG["notify_unsupported_file_extension"];
+				continue;
 			}
 		}
 
-		// not a valid extension - inform the user
-		if (!$is_valid_extension) {
-			return array(false, $LANG["notify_unsupported_file_extension"]);
-		}
 
-		// find out if there was already a file uploaded in this field. We make a note of this so that
-		// in case the new file upload is successful, we automatically delete the old file
-		$submission_info = Submissions::getSubmissionInfo($form_id, $submission_id);
+		exit;
 		$old_filename = (!empty($submission_info[$col_name])) ? $submission_info[$col_name] : "";
 
 		// check for duplicate filenames and get a unique name
@@ -691,9 +635,9 @@ END;
 
 
 	/**
-	 * This is called by the ft_process_form function. It handles the file upload for all "File" Field types.
-	 *
-	 * @param array $params
+	 * Called by the ft_process_form function. It handles the file upload for all "File" Field types.
+	 * @param $params
+	 * @return array|void
 	 */
 	public function processFormSubmissionHook($params)
 	{
@@ -967,5 +911,192 @@ END;
 		Hooks::registerHook("code", "field_type_file", "start", "FormTools\\Fields::getUploadedFiles", "getUploadedFilesHook", 50, true);
 		Hooks::registerHook("template", "field_type_file", "head_bottom", "", "includeJs");
 		Hooks::registerHook("template", "field_type_file", "standalone_form_fields_head_bottom", "", "includeStandaloneJs");
+	}
+
+
+	private static function addFieldType($module_id, $group_id, $list_order)
+	{
+		$db = Core::$db;
+
+		$db->query("
+            INSERT INTO {PREFIX}field_types (is_editable, non_editable_info, managed_by_module_id, field_type_name,
+                field_type_identifier, group_id, is_file_field, is_date_field, raw_field_type_map, 
+                raw_field_type_map_multi_select_id, list_order, compatible_field_sizes,
+                view_field_rendering_type, view_field_php_function_source, view_field_php_function,
+                view_field_smarty_markup, edit_field_smarty_markup, php_processing, resources_css, resources_js)
+            VALUES (:is_editable, :non_editable_info, :module_id, :field_type_name, :field_type_identifier, :group_id,
+                :is_file_field, :is_date_field, :raw_field_type_map, :raw_field_type_map_multi_select_id, :list_order,
+                :compatible_field_sizes, :view_field_rendering_type, :view_field_php_function_source, :view_field_php_function,
+                :view_field_smarty_markup, :edit_field_smarty_markup, :php_processing, :resources_css, :resources_js)
+        ");
+		$db->bindAll(self::$fieldTypeRecordMap);
+		$db->bindAll(array(
+			"module_id" => $module_id,
+			"group_id" => $group_id,
+			"list_order" => $list_order,
+			"view_field_smarty_markup" => self::$viewFieldSmartyMarkup,
+			"edit_field_smarty_markup" => self::$editFieldSmartyMarkup
+		));
+		$db->execute();
+
+		return $db->getInsertId();
+	}
+
+
+	private static function updateFieldType()
+	{
+		$db = Core::$db;
+
+		$field_type = FieldTypes::getFieldTypeByIdentifier("file");
+		if (empty($file_type)) {
+			return;
+		}
+
+		$db->query("
+            UPDATE {PREFIX}field_types 
+            SET    is_editable = :is_editable,
+            	   non_editable_info = :non_editable_info,
+            	   managed_by_module_id = :module_id,
+            	   field_type_name = :field_type_name,
+                   field_type_identifier = :field_type_identifier,
+                   group_id = :group_id,
+                   is_file_field = :is_file_field,
+                   is_date_field = :is_date_field,
+                   raw_field_type_map = :raw_field_type_map,
+                   raw_field_type_map_multi_select_id = :raw_field_type_map_multi_select_id,
+                   list_order = :list_order,
+                   compatible_field_sizes = :compatible_field_sizes,
+                   view_field_rendering_type = :view_field_rendering_type,
+                   view_field_php_function_source = :view_field_php_function_source,
+                   view_field_php_function = :view_field_php_function,
+                   view_field_smarty_markup = :view_field_smarty_markup,
+                   edit_field_smarty_markup = :edit_field_smarty_markup,
+                   php_processing = :php_processing,
+                   resources_css = :resources_css,
+                   resources_js = :resources_js,
+			WHERE field_type_id = :field_type_id
+        ");
+		$db->bindAll(self::$fieldTypeRecordMap);
+		$db->bindAll(array(
+			"module_id" => $field_type["module_id"],
+			"group_id" => $field_type["group_id"],
+			"list_order" => $field_type["list_order"],
+			"view_field_smarty_markup" => self::$viewFieldSmartyMarkup,
+			"edit_field_smarty_markup" => self::$editFieldSmartyMarkup
+		));
+		$db->execute();
+	}
+
+
+	private static function resetFieldSettingOptions($setting_id, $settings)
+	{
+		$db = Core::$db;
+
+		$db->query("
+			DELETE FROM {PREFIX}field_type_setting_options
+			WHERE setting_id = :setting_id 
+		");
+		$db->bind("setting_id", $setting_id);
+		$db->execute();
+
+		if (!empty($settings)) {
+			$data = array();
+			foreach ($settings as $setting) {
+				$setting["setting_id"] = $setting_id;
+				$data[] = $setting;
+			}
+			FieldTypes::addFieldTypeSettingOptions($data);
+		}
+	}
+
+
+	private static function resetValidationRules($field_type_id)
+	{
+		$db = Core::$db;
+
+		$db->query("DELETE FROM {PREFIX}field_type_validation_rules WHERE field_type_id = :field_type_id");
+		$db->bind("field_type_id", $field_type_id);
+		$db->execute();
+
+		$db->query("
+            INSERT INTO {PREFIX}field_type_validation_rules (field_type_id, rsv_rule, rule_label,
+                rsv_field_name, custom_function, custom_function_required, default_error_message, list_order)
+            VALUES (:field_type_id, :rsv_rule, :rule_label, :rsv_field_name, :custom_function,
+                :custom_function_required, :default_error_message, :list_order)
+        ");
+		$db->bindAll(array(
+			"field_type_id" => $field_type_id,
+			"rsv_rule" => "function",
+			"rule_label" => "{\$LANG.word_required}",
+			"rsv_field_name" => "",
+			"custom_function" => "files_ns.check_required",
+			"custom_function_required" => "yes",
+			"default_error_message" => "{\$LANG.validation_default_rule_required}",
+			"list_order" => 1
+		));
+		$db->execute();
+	}
+
+
+	/**
+	 * Returns an array of the following structure:
+	 * [
+	 *   [
+	 *     "filename" => "",
+	 *   ],
+	 *    ...
+	 * ]
+	 * @param $is_multiple_files
+	 * @param $field_name
+	 * @param $files
+	 */
+	private static function extractFileUploadInfo($is_multiple_files, $field_name, $files)
+	{
+		$char_whitelist = Core::getFilenameCharWhitelist();
+		$file_info = $files[$field_name];
+
+		// clean up the filename according to the whitelist chars
+		$filedata = array();
+		if ($is_multiple_files == "no") {
+			$filename_parts = explode(".", $file_info["name"]);
+			$extension = $filename_parts[count($filename_parts) - 1];
+			array_pop($filename_parts);
+			$filename_without_extension = implode(".", $filename_parts);
+			$valid_chars = preg_quote($char_whitelist);
+			$filename_without_ext_clean = preg_replace("/[^$valid_chars]/", "", $filename_without_extension);
+			if (empty($filename_without_ext_clean)) {
+				$filename_without_ext_clean = "file";
+			}
+
+			$filedata[] = array(
+				"filename" => $filename_without_ext_clean . "." . $extension,
+				"filesize" => $file_info["size"] / 1000,
+				"tmp_filename" => $file_info["tmp_name"]
+			);
+		} else {
+			$num_files = count($files[$field_name]["name"]);
+			for ($i=0; $i<$num_files; $i++) {
+				$filename_parts = explode(".", $file_info["name"][$i]);
+				$extension = $filename_parts[count($filename_parts) - 1];
+				array_pop($filename_parts);
+				$filename_without_extension = implode(".", $filename_parts);
+				$valid_chars = preg_quote($char_whitelist);
+				$filename_without_ext_clean = preg_replace("/[^$valid_chars]/", "", $filename_without_extension);
+				if (empty($filename_without_ext_clean)) {
+					$filename_without_ext_clean = "file";
+				}
+
+				$filedata[] = array(
+					"filename" => $filename_without_ext_clean . "." . $extension,
+					"filesize" => $file_info["size"][$i] / 1000,
+					"tmp_filename" => $file_info["tmp_name"][$i]
+				);
+			}
+		}
+
+		print_r($filedata);
+		exit;
+
+		return $filedata;
 	}
 }
