@@ -57,17 +57,33 @@ END;
 	private static $editFieldSmartyMarkup = <<< END
 <div class="cf_file">
     <input type="hidden" class="cf_file_field_id" value="{\$FIELD_ID}" />
+
     <div id="cf_file_{\$FIELD_ID}_content" {if !\$VALUE}style="display:none"{/if}>
-        <a href="{\$folder_url}/{\$VALUE}" 
+        {if \$multiple_files == "no"}
+          <a href="{\$folder_url}/{\$VALUE}" 
             {if \$use_fancybox == "yes"}class="fancybox"{/if}>{\$VALUE}</a>
-        <input type="button" class="cf_delete_file" 
+		  <input type="button" class="cf_delete_file" 
             value="{\$LANG.phrase_delete_file|upper}" />
+		{else}
+			{assign var=filenames value=", "|explode:\$VALUE} 
+			<ul>
+			  {foreach from=\$filenames item=filename}
+				<li>
+					<input type="checkbox" />
+					<a href="{\$folder_url}/{\$file}" 
+            			{if \$use_fancybox == "yes"}class="fancybox"{/if}>{\$VALUE}</a>
+				</li>
+              {/foreach}
+			</ul>
+			<a href="#">Select all</a>
+        {/if}
     </div>
-    <div id="cf_file_{\$FIELD_ID}_no_content" {if \$VALUE}style="display:none"{/if}>
+    <div id="cf_file_{\$FIELD_ID}_no_content" {if \$multiple_files === "no" && \$VALUE}style="display:none"{/if}>
         <input type="file" name="{\$NAME}{if \$multiple_files == "yes"}[]{/if}" {if \$multiple_files == "yes"}multiple="multiple"{/if}" />
     </div>
     <div id="file_field_{\$FIELD_ID}_message_id" class="cf_file_message"></div>
 </div>
+
 {if \$comments}
     <div class="cf_field_comments">{\$comments}</div>
 {/if}
@@ -236,13 +252,22 @@ END;
 
 	public function upgrade($module_id, $old_module_version)
 	{
+		$this->resetModule();
+	}
+
+
+	public function resetModule()
+	{
+		$L = $this->getLangStrings();
+
 		$this->updateFieldType();
 
 		$field_type_info = FieldTypes::getFieldTypeByIdentifier("file");
 		$this->installOrUpdateFieldTypeSettings($field_type_info["field_type_id"]);
 		$this->resetHooks();
-	}
 
+		return array(true, $L["notify_field_type_reset"]);
+	}
 
 	public function installOrUpdateFieldTypeSettings($field_type_id)
 	{
@@ -391,7 +416,6 @@ END;
 		$db = Core::$db;
 		$LANG = Core::$L;
 
-
 		// get the column name and upload folder for this field
 		$col_name = $file_field_info["field_info"]["col_name"];
 
@@ -411,12 +435,9 @@ END;
 			return array(false, $LANG["notify_invalid_field_upload_folder"]);
 		}
 
-		$fileinfo = $this->extractFileUploadInfo($is_multiple_files, $field_name, $_FILES);
+		$fileinfo = self::extractSingleFieldFileUploadData($is_multiple_files, $field_name, $_FILES);
 
-		// find out if there was already a file/files uploaded in this field. We make a note of this so that
-		// in case the new file upload is successful, we automatically delete the old file
-		$submission_info = Submissions::getSubmissionInfo($form_id, $submission_id);
-
+		$final_file_upload_info = array();
 		$errors = array();
 		foreach ($fileinfo as $row) {
 
@@ -433,8 +454,8 @@ END;
 				continue;
 			}
 
-			// check file extension is valid. Note: this is "dumb" - it just tests for the file extension string, not
-			// the actual file type based on it's header info [this is done because I want to allow users to permit
+			// check file extension is valid. Note: this is rather basic - it just tests for the file extension string,
+			// not the actual file type based on its header info [this is done because I want to allow users to permit
 			// uploading of any file types, and I can't know about all header types]
 			$is_valid_extension = true;
 			if (!empty($permitted_file_types)) {
@@ -442,8 +463,7 @@ END;
 				$raw_extensions = explode(",", $permitted_file_types);
 
 				foreach ($raw_extensions as $ext) {
-					// remove whitespace and periods
-					$clean_extension = str_replace(".", "", trim($ext));
+					$clean_extension = str_replace(".", "", trim($ext)); // remove whitespace and periods
 
 					if (preg_match("/$clean_extension$/i", $row["filename"])) {
 						$is_valid_extension = true;
@@ -453,53 +473,71 @@ END;
 
 			// not a valid extension - inform the user
 			if (!$is_valid_extension) {
-				// TODO error cleanup for MULTI
-				$errors[] = $LANG["notify_unsupported_file_extension"];
+				$errors[] = $LANG["notify_unsupported_file_extension"]; // TODO error cleanup for MULTI
 				continue;
+			}
+
+			$final_file_upload_info[] = array(
+				"tmp_filename" => $row["tmp_filename"],
+				"original_filename" => $row["filename"],
+				"unique_filename" => Files::getUniqueFilename($file_upload_dir, $row["filename"])
+			);
+		}
+
+		// find out if there was already a file/files uploaded in this field. For single file upload fields, uploading
+		// a new file removes the old one. For files that allow multiple uploads, uploading a new file just appends it
+		$submission_info = Submissions::getSubmissionInfo($form_id, $submission_id);
+		$old_filename = (!empty($submission_info[$col_name])) ? $submission_info[$col_name] : "";
+
+		if ($is_multiple_files === "no") {
+			self::removeOldSubmissionFieldFiles($old_filename, $file_upload_dir);
+		}
+
+		$successfully_uploaded_files = array();
+		$upload_file_errors = array();
+		foreach ($final_file_upload_info as $row) {
+			if (@rename($row["tmp_filename"], "$file_upload_dir/{$row["unique_filename"]}")) {
+				@chmod("$file_upload_dir/{$row["unique_filename"]}", 0777);
+				$successfully_uploaded_files[] = $row["unique_filename"];
+			} else {
+				$upload_file_errors[] = $row["original_filename"];
 			}
 		}
 
+		// now we're uploading multiple files at once, SOME may success, some may fail. I think the best behaviour would
+		// be to upload as much as we can, then just list errors for any fields that failed
 
-		exit;
-		$old_filename = (!empty($submission_info[$col_name])) ? $submission_info[$col_name] : "";
+		if (!empty($successfully_uploaded_files)) {
+			$file_list = implode(":", $successfully_uploaded_files);
 
-		// check for duplicate filenames and get a unique name
-		$unique_filename = Files::getUniqueFilename($file_upload_dir, $filename);
-
-		// copy file to uploads folder and remove temporary file
-		if (@rename($tmp_filename, "$file_upload_dir/$unique_filename")) {
-			@chmod("$file_upload_dir/$unique_filename", 0777);
-
-			// update the database
 			try {
 				$db->query("
-                    UPDATE {PREFIX}form_{$form_id}
-                    SET    $col_name = :unique_filename
-                    WHERE  submission_id = :submission_id
-                ");
+					UPDATE {PREFIX}form_{$form_id}
+					SET    $col_name = :file_names
+					WHERE  submission_id = :submission_id
+				");
 				$db->bindAll(array(
-					"unique_filename" => $unique_filename,
+					"file_names" => $file_list,
 					"submission_id" => $submission_id
 				));
 				$db->execute();
 
-				// if there was a file previously uploaded in this field, delete it!
-				if (!empty($old_filename)) {
-					@unlink("$file_upload_dir/$old_filename");
-				}
-
-				return array(true, $LANG["notify_file_uploaded"], $unique_filename);
+				// TODO
+				return array(true, $LANG["notify_file_uploaded"], $file_list);
 			} catch (Exception $e) {
+
+				// TPODOP
 				return array(false, $LANG["notify_file_not_uploaded"] . ": " . $e->getMessage());
 			}
 		} else {
-			return array(false, $LANG["notify_file_not_uploaded"]);
+			return array(false, $LANG["notify_file_not_uploaded"] . "..... TODO");
 		}
 	}
 
 
 	/**
-	 * Deletes a file that has been uploaded through a form submission file field.
+	 * Deletes a single file that has been uploaded through a form submission file field. This works for fields
+	 * configured to allow single or multiple file uploads.
 	 *
 	 * @param integer $form_id the unique form ID
 	 * @param integer $submission_id a unique submission ID
@@ -1039,64 +1077,77 @@ END;
 
 
 	/**
-	 * Returns an array of the following structure:
-	 * [
-	 *   [
-	 *     "filename" => "",
-	 *   ],
-	 *    ...
-	 * ]
+	 * Returns an array of hashes. Each hash contains details about the file being uploaded; if there's a single file,
+	 * the top level array contains a single hash.
 	 * @param $is_multiple_files
 	 * @param $field_name
 	 * @param $files
+	 * @return array
 	 */
-	private static function extractFileUploadInfo($is_multiple_files, $field_name, $files)
+	private static function extractSingleFieldFileUploadData($is_multiple_files, $field_name, $files)
 	{
-		$char_whitelist = Core::getFilenameCharWhitelist();
 		$file_info = $files[$field_name];
 
 		// clean up the filename according to the whitelist chars
-		$filedata = array();
+		$file_data = array();
 		if ($is_multiple_files == "no") {
-			$filename_parts = explode(".", $file_info["name"]);
-			$extension = $filename_parts[count($filename_parts) - 1];
-			array_pop($filename_parts);
-			$filename_without_extension = implode(".", $filename_parts);
-			$valid_chars = preg_quote($char_whitelist);
-			$filename_without_ext_clean = preg_replace("/[^$valid_chars]/", "", $filename_without_extension);
-			if (empty($filename_without_ext_clean)) {
-				$filename_without_ext_clean = "file";
-			}
-
-			$filedata[] = array(
-				"filename" => $filename_without_ext_clean . "." . $extension,
-				"filesize" => $file_info["size"] / 1000,
-				"tmp_filename" => $file_info["tmp_name"]
-			);
+			$file_data[] = self::getSingleUploadedFileData($file_info["name"], $file_info["size"], $file_info["tmp_name"]);
 		} else {
 			$num_files = count($files[$field_name]["name"]);
-			for ($i=0; $i<$num_files; $i++) {
-				$filename_parts = explode(".", $file_info["name"][$i]);
-				$extension = $filename_parts[count($filename_parts) - 1];
-				array_pop($filename_parts);
-				$filename_without_extension = implode(".", $filename_parts);
-				$valid_chars = preg_quote($char_whitelist);
-				$filename_without_ext_clean = preg_replace("/[^$valid_chars]/", "", $filename_without_extension);
-				if (empty($filename_without_ext_clean)) {
-					$filename_without_ext_clean = "file";
-				}
-
-				$filedata[] = array(
-					"filename" => $filename_without_ext_clean . "." . $extension,
-					"filesize" => $file_info["size"][$i] / 1000,
-					"tmp_filename" => $file_info["tmp_name"][$i]
-				);
+			for ($i = 0; $i < $num_files; $i++) {
+				$file_data[] = self::getSingleUploadedFileData($file_info["name"][$i], $file_info["size"][$i], $file_info["tmp_name"][$i]);
 			}
 		}
 
-		print_r($filedata);
-		exit;
+		return $file_data;
+	}
 
-		return $filedata;
+
+	private static function getSingleUploadedFileData($filename, $file_size, $tmp_name)
+	{
+		$char_whitelist = Core::getFilenameCharWhitelist();
+		$valid_chars = preg_quote($char_whitelist);
+
+		$filename_parts = explode(".", $filename);
+		$extension = $filename_parts[count($filename_parts) - 1];
+		array_pop($filename_parts);
+		$filename_without_extension = implode(".", $filename_parts);
+
+		$filename_without_ext_clean = preg_replace("/[^$valid_chars]/", "", $filename_without_extension);
+		if (empty($filename_without_ext_clean)) {
+			$filename_without_ext_clean = "file";
+		}
+
+		return array(
+			"filename" => $filename_without_ext_clean . "." . $extension,
+			"filesize" => $file_size / 1000,
+			"tmp_filename" => $tmp_name
+		);
+	}
+
+
+	/**
+	 * Removes any file(s) for a single form field.
+	 *
+	 * Called when uploading a new file into a field flagged with "is_multiple" = no. Generally a field with
+	 * that configuration will only ever contain a single file, but the user may have just switched the field from
+	 * multiple to single, so the field actually contains MULTIPLE filenames.
+	 *
+	 * @param $submission_field_value
+	 * @param $file_upload_dir
+	 */
+	private static function removeOldSubmissionFieldFiles($submission_field_value, $file_upload_dir)
+	{
+		if (!empty($submission_field_value)) {
+			return;
+		}
+
+		$files = explode(":", $submission_field_value);
+
+		foreach ($files as $file) {
+			if (file_exists("$file_upload_dir/$file")) {
+				@unlink("$file_upload_dir/$file");
+			}
+		}
 	}
 }
