@@ -12,10 +12,16 @@ $(function () {
 		}
 	};
 
-	$(".cf_delete_file").each(function () {
-		var field_id = $(this).closest(".cf_file").find(".cf_file_field_id").val();
+	$(".cf_delete_file,.cf_file_delete_selected").each(function () {
+		var group = $(this).closest(".cf_file");
+		var field_id = group.find(".cf_file_field_id").val();
+
 		$(this).bind("click", function () {
-			return files_ns.delete_submission_file(field_id, false);
+			var files = [];
+			group.find(".cf_file_row_cb:checked").each(function () {
+				files.push($(this).val());
+			});
+			return files_ns.delete_submission_files(field_id, files, false);
 		});
 	});
 
@@ -89,19 +95,19 @@ files_ns.check_required = function () {
  * @param field_id
  * @param force_delete boolean
  */
-files_ns.delete_submission_file = function (field_id, force_delete) {
+files_ns.delete_submission_files = function (field_id, files, force_delete) {
 	var page_url = g.root_url + "/modules/field_type_file/actions.php";
 
 	var data = {
-		action: "delete_submission_file",
+		action: "delete_submission_files",
 		field_id: field_id,
+		files: files,
 		form_id: $("#form_id").val(),
 		submission_id: $("#submission_id").val(),
 		return_vars: { target_message_id: "file_field_" + field_id + "_message_id", field_id: field_id },
 		force_delete: force_delete
 	};
 
-	var confirm_delete = true;
 	if (!force_delete) {
 		ft.create_dialog({
 			dialog: files_ns.confirm_delete_dialog,

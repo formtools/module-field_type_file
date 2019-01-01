@@ -525,22 +525,23 @@ END;
 
 
 	/**
-	 * Deletes a single file that has been uploaded through a form submission file field. This works for fields
-	 * configured to allow single or multiple file uploads.
+	 * Deletes one or more file that has been uploaded through a single form submission file field. This is only ever
+	 * called via an ajax request.
 	 *
 	 * @param integer $form_id the unique form ID
 	 * @param integer $submission_id a unique submission ID
 	 * @param integer $field_id a unique form field ID
+	 * @param array $files a list of filenames
 	 * @param boolean $force_delete this forces the file to be deleted from the database, even if the
 	 *                file itself doesn't exist or doesn't have the right permissions.
+	 * @param array
 	 * @return array Returns array with indexes:<br/>
 	 *               [0]: true/false (success / failure)<br/>
 	 *               [1]: message string<br/>
 	 */
-	public static function deleteFileSubmission($form_id, $submission_id, $field_id, $force_delete)
+	public static function deleteFileSubmission($form_id, $submission_id, $field_id, $files, $force_delete, $L)
 	{
 		$db = Core::$db;
-		$LANG = Core::$L;
 
 		// get the column name and upload folder for this field
 		$field_info = Fields::getFormField($field_id);
@@ -548,57 +549,63 @@ END;
 
 		// if the column name wasn't found, the $field_id passed in was invalid. Return false.
 		if (empty($col_name)) {
-			return array(false, $LANG["notify_submission_no_field_id"]);
+			return array(false, $L["notify_submission_no_field_id"]);
+		}
+
+		// confirm all files passed are actually listed as part of the field. Just ignore any that aren't.
+		$submission_info = Submissions::getSubmissionInfo($form_id, $submission_id);
+		$existing_files = explode(":", $submission_info[$col_name]);
+		$files_to_delete = array();
+		foreach ($files as $filename) {
+			if (in_array($filename, $existing_files)) {
+				$files_to_delete[] = $filename;
+			}
+		}
+
+		if (empty($files_to_delete)) {
+			return array(false, $L["phrase_no_files_to_delete"]);
 		}
 
 		$field_settings = Fields::getFieldSettings($field_id);
 		$file_folder = $field_settings["folder_path"];
 
-		$db->query("
-            SELECT $col_name
-            FROM   {PREFIX}form_{$form_id}
-            WHERE  submission_id = :submission_id
-        ");
-		$db->bind("submission_id", $submission_id);
-		$db->execute();
-
-		$file = $db->fetch(PDO::FETCH_COLUMN);
-
 		$update_database_record = false;
+		$updated_field_value = '';
 		$success = true;
-		$message = "";
 
-		if (!empty($file)) {
-			if ($force_delete) {
-				@unlink("$file_folder/$file");
-				$message = $LANG["notify_file_deleted"];
+		if ($force_delete) {
+			self::deleteFiles($file_folder, $files_to_delete);
+			$message = $L["notify_file_deleted"];
+			$update_database_record = true;
+		} else {
+
+			list($all_deleted_successfully, $undeleted_files) = self::deleteFiles($file_folder, $files_to_delete);
+
+			$remaining_files = array();
+			if ($all_deleted_successfully) {
+				$success = true;
 				$update_database_record = true;
+				$message = (count($files_to_delete) > 1) ? $L["notify_files_deleted"] : $L["notify_file_deleted"];
+
+				foreach ($existing_files as $file) {
+					if (!in_array($file, $files_to_delete)) {
+						$remaining_files[] = $file;
+					}
+				}
 			} else {
-				if (@unlink("$file_folder/$file")) {
-					$success = true;
-					$message = $LANG["notify_file_deleted"];
-					$update_database_record = true;
-				} else {
-					if (!is_file("$file_folder/$file")) {
-						$success = false;
-						$update_database_record = false;
-						$replacements = array("js_link" => "return files_ns.delete_submission_file($field_id, true)");
-						$message = General::evalSmartyString($LANG["notify_file_not_deleted_no_exist"] . "($file_folder/$file)", $replacements);
-					} else {
-						if (is_file("$file_folder/$file") && (!is_readable("$file_folder/$file") || !is_writable("$file_folder/$file"))) {
-							$success = false;
-							$update_database_record = false;
-							$replacements = array("js_link" => "return files_ns.delete_submission_file($field_id, true)");
-							$message = General::evalSmartyString($LANG["notify_file_not_deleted_permissions"], $replacements);
-						} else {
-							$success = false;
-							$update_database_record = false;
-							$replacements = array("js_link" => "return files_ns.delete_submission_file($field_id, true)");
-							$message = General::evalSmartyString($LANG["notify_file_not_deleted_unknown_error"], $replacements);
-						}
+				// here there was a problem deleting one of the actual files. Cater the display message to precisely
+				// what went wrong, but update the database to remove any files that were successfully uploaded
+				$num_deleted = count($files_to_delete) - count($undeleted_files);
+				$success = false;
+				$message = self::getDeleteFileErrorMessage($file_folder, $num_deleted, $undeleted_files, $L);
+
+				foreach ($existing_files as $file) {
+					if (!in_array($file, $files_to_delete) || in_array($file, $undeleted_files)) {
+						$remaining_files[] = $file;
 					}
 				}
 			}
+			$updated_field_value = implode(":", $remaining_files);
 		}
 
 		// if need be, update the database record to remove the reference to the file in the database. Generally this
@@ -608,13 +615,17 @@ END;
 		if ($update_database_record) {
 			$db->query("
                 UPDATE {PREFIX}form_{$form_id}
-                SET    $col_name = ''
+                SET    $col_name = :updated_field_value
                 WHERE  submission_id = :submission_id
             ");
-			$db->bind("submission_id", $submission_id);
+			$db->bindAll(array(
+				"updated_field_value" => $updated_field_value,
+				"submission_id" => $submission_id
+			));
 			$db->execute();
 		}
 
+		// TODO look this over. Maybe just move back to Module would make things easiest
 		extract(CoreHooks::processHookCalls("end", compact("form_id", "submission_id", "field_id", "force_delete"), array("success", "message")), EXTR_OVERWRITE);
 
 		return array($success, $message);
@@ -700,4 +711,94 @@ END;
 		}
 	}
 
+
+	private static function deleteFiles($folder, $files)
+	{
+		$success = true;
+		$undeleted_files = array();
+		foreach ($files as $file) {
+			if (!@unlink("$folder/$file")) {
+				$success = false;
+				$undeleted_files[] = $file;
+			}
+		}
+		return array($success, $undeleted_files);
+	}
+
+
+
+	/**
+	 * Constructs a human-friendly message after one or more files weren't deleted for a particular form field.
+	 * @param $folder
+	 * @param $num_deleted
+	 * @param $undeleted_files
+	 * @param $L
+	 * @return string
+	 */
+	private static function getDeleteFileErrorMessage($folder, $num_deleted, $undeleted_files, $L)
+	{
+		$lines = array();
+		$indent = "";
+		if ($num_deleted > 0) {
+			$lines[] = "<b>{$num_deleted}</b> files were successfully deleted, but the following errors occurred:";
+			$indent = "&bull; ";
+		}
+
+		$missing_files = array();
+		$invalid_permissions = array();
+		$unknown_errors = array();
+
+		foreach ($undeleted_files as $file) {
+			$full_path = "$folder/$file";
+			if (!is_file($full_path)) {
+				$missing_files[] = $file;
+			} else if (!is_readable($full_path) || !is_writable($full_path)) {
+				$invalid_permissions[] = $file;
+			} else {
+				$unknown_errors[] = $file;
+			}
+		}
+
+		$show_clear_error_line = true;
+		if (!empty($missing_files)) {
+			if (count($missing_files) === 1) {
+				$lines[] = "{$indent}The <b>{$missing_files[0]}</b> file hasn't been deleted because it doesn't exist in the expected folder (<b>/$folder</b>).";
+			} else {
+				$lines[] = "{$indent}The following files haven't been deleted because they doesn't exist in the expected folder (<b>/$folder</b>): <b>"
+					. implode("</b>, <b>", $missing_files) . "</b>.";
+			}
+
+//			$replacements = array("js_link" => "return files_ns.delete_submission_file($field_id, true)");
+//			$message = General::evalSmartyString($L["notify_file_not_deleted_no_exist"] . "($folder/$file)", $replacements);
+			if (empty($invalid_permissions) && empty($unknown_errors)) {
+				$lines[] .= "<a href=\"#\" onclick=\"{\$js_link}\">Click here</a> to ignore this error message and just remove the reference from the database.";
+				$show_clear_error_line = false;
+			}
+		}
+
+		if (!empty($invalid_permissions)) {
+
+		}
+
+		if ($show_clear_error_line) {
+			$lines[] = "<a href=\"#\">Click here</a> to ignore these errors and remove the references from the submission data.";
+		}
+
+
+//		} else {
+//			if (is_file("$file_folder/$file") && (!is_readable("$file_folder/$file") || !is_writable("$file_folder/$file"))) {
+//				$success = false;
+//				$update_database_record = false;
+//				$replacements = array("js_link" => "return files_ns.delete_submission_file($field_id, true)");
+//				$message = General::evalSmartyString($LANG["notify_file_not_deleted_permissions"], $replacements);
+//			} else {
+//				$success = false;
+//				$update_database_record = false;
+//				$replacements = array("js_link" => "return files_ns.delete_submission_file($field_id, true)");
+//				$message = General::evalSmartyString($LANG["notify_file_not_deleted_unknown_error"], $replacements);
+//			}
+//		}
+
+		return implode("<br />", $lines);
+	}
 }

@@ -139,9 +139,10 @@ class Module extends FormToolsModule
 		return Hooks::uploadSubmissionFile($form_id, $submission_id, $file_field_info);
 	}
 
-	public function deleteFileSubmission($form_id, $submission_id, $field_id, $force_delete = false)
+	public function deleteFileSubmission($form_id, $submission_id, $field_id, $files, $force_delete = false)
 	{
-		return Hooks::deleteFileSubmission($form_id, $submission_id, $field_id, $force_delete);
+		$L = $this->getLangStrings();
+		return Hooks::deleteFileSubmission($form_id, $submission_id, $field_id, $files, $force_delete, $L);
 	}
 
 	public function includeJs($template, $page_data)
