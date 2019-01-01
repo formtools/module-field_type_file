@@ -351,12 +351,12 @@ END;
 		$submission_id = $params["submission_id"];
 		$module_field_type_id = FieldTypes::getFieldTypeIdByIdentifier("file");
 
-		$problem_files = array();
-		$return_info = array(
-			"success" => true
-		);
-
 		$num_uploaded_files = 0;
+		$all_successful = true;
+		$file_size_errors = array();
+		$file_extension_errors = array();
+		$file_rename_errors = array();
+
 		foreach ($file_fields as $file_field_info) {
 			$field_type_id = $file_field_info["field_info"]["field_type_id"];
 			$field_name = $file_field_info["field_info"]["field_name"];
@@ -370,54 +370,71 @@ END;
 				continue;
 			}
 
-			list ($success, $uploaded_files, $errors) = self::uploadSubmissionFile($form_id, $submission_id, $file_field_info, $L);
 			$num_uploaded_files += count($uploaded_files);
 
-			//if (!$success) {
-//				$problem_files[] = array($_FILES[$field_name]["name"], $message);
-//			} else {
-//				$return_info["message"] = $message;
-//			}
-
-			// if nothing was valid, just error out now and show the appropriate error(s)
-//			$lines = array();
-//			if (count($file_size_errors) == 1) {
-//				$lines[] = General::evalSmartyString($L["notify_file_too_large"], array(
-//					"filename" => $file_size_errors[0]["filename"],
-//					"file_size" => $file_size_errors[0]["actual_size"],
-//					"max_file_size" => $file_size_errors[0]["max_file_size"]
-//				));
-//			} else if (count($file_size_errors) > 1) {
-//				$lines[] = General::evalSmartyString($L["notify_files_too_large"], array(
-//					"field_title" => $file_field_info["field_info_info"]["field_title"],
-//					"file_size" => $file_upload_max_size,
-//					"file_list" => implode("</b>, <b>", $file_size_errors)
-//				));
-//			}
-//
-//			return array(false, implode("<br />", $lines));
-//		}
-
-			// $LANG["notify_unsupported_file_extension"]
-			// $L["notify_file_too_large"] = "The {filename} file is too large. The file was {\$FILESIZE}KB, but the maximum permitted file upload size is {\$MAXFILESIZE}KB.";
-			// $error = General::evalSmartyString($LANG["notify_file_too_large"], $placeholders);
-
-
+			if (!$success) {
+				$all_successful = false;
+			}
+			if (!empty($errors["file_size_errors"])) {
+				$file_size_errors = array_merge($file_size_errors, $errors["file_size_errors"]);
+			}
+			if (!empty($errors["file_extension_errors"])) {
+				$file_extension_errors = array_merge($file_extension_errors, $errors["file_extension_errors"]);
+			}
+			if (!empty($errors["file_rename_errors"])) {
+				$file_rename_errors = array_merge($file_rename_errors, $errors["file_rename_errors"]);
+			}
 		}
 
-		if (!empty($problem_files)) {
-			$message = $L["notify_submission_updated_file_problems"] . "<br /><br />";
-			foreach ($problem_files as $problem) {
-				$message .= "&bull; <b>{$problem[0]}</b>: $problem[1]<br />\n";
+		//print_r($file_size_errors);
+
+		$lines = array();
+		if (!empty($file_size_errors) || !empty($file_extension_errors) || !empty($file_rename_errors)) {
+
+			if ($num_uploaded_files > 0) {
+				$lines[] = $L["notify_submission_updated_file_problems"];
 			}
 
-			$return_info = array(
-				"success" => false,
-				"message" => $message
-			);
+			if (count($file_size_errors) == 1) {
+				$lines[] = General::evalSmartyString($L["notify_file_too_large"], array(
+					"filename" => $file_size_errors[0]["filename"],
+					"file_size" => $file_size_errors[0]["actual_size"],
+					"max_file_size" => $file_size_errors[0]["max_file_size"]
+				));
+			} else if (count($file_size_errors) > 1) {
+				$lines[] = General::evalSmartyString($L["notify_files_too_large"], array(
+					"field_title" => $file_field_info["field_info_info"]["field_title"],
+					"file_size" => $file_upload_max_size,
+					"file_list" => implode("</b>, <b>", $file_size_errors)
+				));
+			}
 		}
 
-		return $return_info;
+		echo $all_successful;
+
+
+		// $LANG["notify_unsupported_file_extension"]
+		// $L["notify_file_too_large"] = "The {filename} file is too large. The file was {\$FILESIZE}KB, but the maximum permitted file upload size is {\$MAXFILESIZE}KB.";
+		// $error = General::evalSmartyString($LANG["notify_file_too_large"], $placeholders);
+
+		return array(
+			"success" => $all_successful,
+			"message" => implode("<br />", $lines)
+		);
+
+//		if (!empty($problem_files)) {
+//			$message = $L["notify_submission_updated_file_problems"] . "<br /><br />";
+//			foreach ($problem_files as $problem) {
+//				$message .= "&bull; <b>{$problem[0]}</b>: $problem[1]<br />\n";
+//			}
+//
+//			$return_info = array(
+//				"success" => false,
+//				"message" => $message
+//			);
+//		}
+//
+//		return $return_info;
 	}
 
 
@@ -466,7 +483,7 @@ END;
 			// check the file isn't too large
 			if ($row["filesize"] > $file_upload_max_size) {
 				$file_size_errors[] = array(
-					"filename" => $row["filename"],
+					"filename" => $row["original_filename"],
 					"actual_size" => round($row["filesize"], 1),
 					"max_file_size" => $file_upload_max_size
 				);
@@ -490,13 +507,13 @@ END;
 			}
 
 			if (!$is_valid_extension) {
-				$file_extension_errors[] = $row["filename"];
+				$file_extension_errors[] = $row["original_filename"];
 				continue;
 			}
 
 			$final_file_upload_info[] = array(
 				"tmp_filename" => $row["tmp_filename"],
-				"original_filename" => $row["filename"],
+				"original_filename" => $row["original_filename"],
 				"unique_filename" => Files::getUniqueFilename($file_upload_dir, $row["filename"])
 			);
 		}
@@ -521,43 +538,37 @@ END;
 			}
 		}
 
-		// update the database record with whatever's been uploaded.
+		// update the database record with whatever's been uploaded
+		$success = false;
+		$file_list = $successfully_uploaded_files;
 		if (!empty($successfully_uploaded_files)) {
+			$success = true;
 			if ($is_multiple_files) {
 				$existing_files = empty($old_filename) ? array() : explode(":", $old_filename);
 				$new_files = $successfully_uploaded_files;
 				$file_list = array_merge($existing_files, $new_files);
 				$file_list_str = implode(":", $file_list);
 			} else {
-				$file_list = $successfully_uploaded_files;
 				$file_list_str = implode(":", $file_list);
 			}
 
-			try {
-				$db->query("
-					UPDATE {PREFIX}form_{$form_id}
-					SET    $col_name = :file_names
-					WHERE  submission_id = :submission_id
-				");
-				$db->bindAll(array(
-					"file_names" => $file_list_str,
-					"submission_id" => $submission_id
-				));
-				$db->execute();
-
-				return array(true, $file_list, array(
-					"file_size_errors" => $file_size_errors,
-					"file_extension_errors" => $file_extension_errors
-				));
-
-			} catch (Exception $e) {
-
-				// TPODOP
-				return array(false, $LANG["notify_file_not_uploaded"] . ": " . $e->getMessage());
-			}
-		} else {
-			return array(false, $LANG["notify_file_not_uploaded"]);
+			$db->query("
+				UPDATE {PREFIX}form_{$form_id}
+				SET    $col_name = :file_names
+				WHERE  submission_id = :submission_id
+			");
+			$db->bindAll(array(
+				"file_names" => $file_list_str,
+				"submission_id" => $submission_id
+			));
+			$db->execute();
 		}
+
+		return array($success, $file_list, array(
+			"file_size_errors" => $file_size_errors,
+			"file_extension_errors" => $file_extension_errors,
+			"file_rename_errors" => $upload_file_errors
+		));
 	}
 
 
@@ -724,6 +735,7 @@ END;
 		}
 
 		return array(
+			"original_filename" => $filename,
 			"filename" => $filename_without_ext_clean . "." . $extension,
 			"filesize" => $file_size / 1000,
 			"tmp_filename" => $tmp_name
