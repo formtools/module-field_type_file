@@ -3,12 +3,14 @@
  */
 
 $(function () {
+	var supportsMultiFileUpload = 'multiple' in document.createElement('input');
 
 	var updateDeleteSelectedBtn = function (group, enabled) {
+		var btn = $(group).find(".cf_file_delete_selected");
 		if (enabled) {
-			$(group).find(".cf_file_delete_selected").removeAttr("disabled");
+			btn.removeAttr("disabled");
 		} else {
-			$(group).find(".cf_file_delete_selected").attr("disabled", "disabled");
+			btn.attr("disabled", "disabled");
 		}
 	};
 
@@ -113,7 +115,7 @@ files_ns.delete_submission_files = function (field_id, files, force_delete) {
 			dialog: files_ns.confirm_delete_dialog,
 			popup_type: "warning",
 			title: g.messages["phrase_please_confirm"],
-			content: g.messages["confirm_delete_submission_file"],
+			content: files.length === 1 ? g.messages["confirm_delete_submission_file"] : g.messages["confirm_delete_submission_files"],
 			buttons: [{
 				"text": g.messages["word_yes"],
 				"click": function () {
@@ -123,17 +125,17 @@ files_ns.delete_submission_files = function (field_id, files, force_delete) {
 						data: data,
 						type: "GET",
 						dataType: "json",
-						success: files_ns.delete_submission_file_response,
+						success: files_ns.delete_files_response,
 						error: ft.error_handler
 					});
 				}
 			},
-				{
-					"text": g.messages["word_no"],
-					"click": function () {
-						$(this).dialog("close");
-					}
-				}]
+			{
+				"text": g.messages["word_no"],
+				"click": function () {
+					$(this).dialog("close");
+				}
+			}]
 		});
 	} else {
 		$.ajax({
@@ -141,30 +143,33 @@ files_ns.delete_submission_files = function (field_id, files, force_delete) {
 			data: data,
 			type: "GET",
 			dataType: "json",
-			success: files_ns.delete_submission_file_response,
+			success: files_ns.delete_files_response,
 			error: ft.error_handler
 		});
 	}
 
 	return false;
-}
+};
 
 
 /**
- * Handles the successful responses for the delete file feature. Whether or not the file was *actually*
- * deleted is a separate matter. If the file couldn't be deleted, the user is provided the option of updating
- * the database record to just remove the reference.
+ * Handles the successful response for deleting a file/files. If any of the files couldn't be deleted, the user is
+ * provided some details, plus the option of updating the database record to just remove the reference.
  */
-files_ns.delete_submission_file_response = function (data) {
+files_ns.delete_files_response = function (data) {
 	ft.dialog_activity_icon($("#confirm_delete_dialog"), "hide");
 	$("#confirm_delete_dialog").dialog("close");
 
-	// if it was a success, remove the link from the page
-	if (data.success == 1) {
-		var field_id = data.field_id;
-		$("#cf_file_" + field_id + "_content").html("");
-		$("#cf_file_" + field_id + "_no_content").show();
+	if (data.success) {
+		// remove any rows that were deleted
+		var group = $("#cf_file_" + data.field_id + "_content").closest(".cf_file");
+		for (var i=0; i<data.deleted_files.length; i++) {
+			group.find(".cf_file_row_cb[value='" + data.deleted_files[i] + "']").closest("li").remove();
+		}
+
+		// $("#cf_file_" + field_id + "_content").html("");
+		// $("#cf_file_" + field_id + "_no_content").show();
 	}
 
 	ft.display_message(data.target_message_id, data.success, data.message);
-}
+};

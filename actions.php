@@ -23,7 +23,7 @@ switch ($request["action"]) {
 		if (!Submissions::checkViewContainsSubmission($form_id, $view_id, $submission_id) ||
 			empty(ViewFields::getViewField($view_id, $field_id))) {
 			output_json_with_return_vars(array(
-				"success" => 0,
+				"success" => false,
 				"message" => "Permission denied."
 			));
 			break;
@@ -32,10 +32,11 @@ switch ($request["action"]) {
 		$files = $request["files"];
 		$force_delete = ($request["force_delete"] == "true") ? true : false;
 
-		list ($success, $message) = $module->deleteFileSubmission($form_id, $submission_id, $field_id, $files, $force_delete);
+		list ($success, $message, $deleted_files) = $module->deleteFilesFromField($form_id, $submission_id, $field_id, $files, $force_delete);
 		output_json_with_return_vars(array(
-			"success" => ($success) ? 1 : 0,
-			"message" => $message
+			"success" => $success,
+			"message" => $message,
+			"deleted_files" => $deleted_files
 		));
 		break;
 

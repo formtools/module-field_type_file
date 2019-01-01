@@ -131,28 +131,26 @@ class Module extends FormToolsModule
 
 	public function updateSubmissionHook($params)
 	{
-		return Hooks::updateSubmissionHook($params);
+		$L = $this->getLangStrings();
+		return Hooks::updateSubmissionHook($params, $L);
 	}
 
-	public function uploadSubmissionFile($form_id, $submission_id, $file_field_info)
-	{
-		return Hooks::uploadSubmissionFile($form_id, $submission_id, $file_field_info);
-	}
-
-	public function deleteFileSubmission($form_id, $submission_id, $field_id, $files, $force_delete = false)
+	public function deleteFilesFromField($form_id, $submission_id, $field_id, $files, $force_delete = false)
 	{
 		$L = $this->getLangStrings();
-		return Hooks::deleteFileSubmission($form_id, $submission_id, $field_id, $files, $force_delete, $L);
+		return Hooks::deleteFilesFromField($form_id, $submission_id, $field_id, $files, $force_delete, $L);
 	}
 
 	public function includeJs($template, $page_data)
 	{
-		Hooks::includeJs($page_data["page"]);
+		$L = $this->getLangStrings();
+		Hooks::includeJs($page_data["page"], $L);
 	}
 
 	public function includeStandaloneJs()
 	{
-		Hooks::includeStandaloneJs();
+		$L = $this->getLangStrings();
+		Hooks::includeStandaloneJs($L);
 	}
 
 	public function processFormSubmissionHook($params)

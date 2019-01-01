@@ -75,32 +75,25 @@ END;
 	{assign var=filenames value=":"|explode:\$VALUE} 
 	{assign var=num_files value=\$filenames|@count}
 
-	{if !empty(\$VALUE)}
-    <div id="cf_file_{\$FIELD_ID}_content">
-		<ul class="cf_file_list">
-			<li class="cf_file_top_row">
-				<input type="checkbox" class="cf_file_toggle_all" />
-				<span class="cf_file_col">Filename</span>
-			</li>
-		    {foreach from=\$filenames item=filename}
-			<li>
-				<input type="checkbox" name="cf_files[]" class="cf_file_row_cb" value="{\$filename}" />
-				<a href="{\$folder_url}/{\$filename}" 
-					{if \$use_fancybox == "yes"}class="fancybox"{/if}>{\$filename}</a>
-				{if \$num_files == 1}
-					<input type="button" class="cf_delete_file" value="{\$LANG.phrase_delete_file|upper}" />
-				{/if}
-			</li>
-		    {/foreach}
-		</ul>
-		{if \$filenames|@count > 1}
-			<input type="button" value="Delete Selected" class="cf_file_delete_selected" disabled="disabled" />
-			<input type="file" name="{\$NAME}{if \$multiple_files == "yes"}[]{/if}" {if \$multiple_files == "yes"}multiple="multiple"{/if}" /> 
-		{/if}
-    </div>
-    {else}
-		<input type="file" name="{\$NAME}{if \$multiple_files == "yes"}[]{/if}" {if \$multiple_files == "yes"}multiple="multiple"{/if}" />
-    {/if}
+	<ul class="cf_file_list" {if empty(\$VALUE)}style="display: none"{/if}>
+		<li class="cf_file_top_row">
+			<input type="checkbox" class="cf_file_toggle_all" />
+			<span class="cf_file_col">Filename</span>
+		</li>
+		{foreach from=\$filenames item=filename}
+		<li>
+			<input type="checkbox" name="cf_files[]" class="cf_file_row_cb" value="{\$filename}" />
+			<a href="{\$folder_url}/{\$filename}" 
+				{if \$use_fancybox == "yes"}class="fancybox"{/if}>{\$filename}</a>
+			{if \$num_files == 1}
+				<input type="button" class="cf_delete_file" value="{\$LANG.phrase_delete_file|upper}" />
+			{/if}
+		</li>
+		{/foreach}
+	</ul>
+	<input type="button" value="Delete Selected" class="cf_file_delete_selected"
+		disabled="disabled" {if empty(\$VALUE)}style="display: none"{/if} />
+	<input type="file" name="{\$NAME}{if \$multiple_files == "yes"}[]{/if}" {if \$multiple_files == "yes"}multiple="multiple"{/if}" /> 
 
     <div id="file_field_{\$FIELD_ID}_message_id" class="cf_file_message"></div>
 </div>

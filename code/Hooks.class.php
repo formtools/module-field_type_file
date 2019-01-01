@@ -18,24 +18,42 @@ use PDO, Exception;
  */
 class Hooks
 {
+
 	/**
 	 * Our template hook. This includes all required JS for the Edit Submission page.
 	 * @param $curr_page
+	 * @param $L
 	 */
-	public static function includeJs($curr_page)
+	public static function includeJs($curr_page, $L)
 	{
 		$root_url = Core::getRootUrl();
+		$LANG = Core::$L;
+
 		if ($curr_page != "admin_edit_submission" && $curr_page != "client_edit_submission") {
 			return;
 		}
-		echo "<script src=\"$root_url/modules/field_type_file/scripts/edit_submission.js\"></script>\n";
+		echo <<<END
+<script src="$root_url/modules/field_type_file/scripts/edit_submission.js"></script>
+<script>
+if (typeof g.messages == 'undefined') {
+	g.messages = {};
+}
+
+g.messages["confirm_delete_submission_file"] = "{$LANG["confirm_delete_submission_file"]}";
+g.messages["confirm_delete_submission_files"] = "{$L["confirm_delete_submission_files"]}";
+g.messages["phrase_please_confirm"] = "{$LANG["phrase_please_confirm"]}";
+g.messages["word_yes"] = "{$LANG["word_yes"]}";
+g.messages["word_no"] = "{$LANG["word_no"]}";
+</script>
+END;
 	}
 
 
 	/**
 	 * Used for any module (e.g. Form Builder) that uses the form fields in a standalone context.
+	 * @param $L
 	 */
-	public static function includeStandaloneJs()
+	public static function includeStandaloneJs($L)
 	{
 		$root_url = Core::getRootUrl();
 		$LANG = Core::$L;
@@ -48,6 +66,7 @@ class Hooks
     g.messages = {};
 
   g.messages["confirm_delete_submission_file"] = "{$LANG["confirm_delete_submission_file"]}";
+  g.messages["confirm_delete_submission_files"] = "{$L["confirm_delete_submission_files"]}";
   g.messages["phrase_please_confirm"] = "{$LANG["phrase_please_confirm"]}";
   g.messages["word_yes"] = "{$LANG["word_yes"]}";
   g.messages["word_no"] = "{$LANG["word_no"]}";
@@ -57,7 +76,7 @@ END;
 
 
 	/**
-	 * Called by the ft_process_form function. It handles the file upload for all "File" Field types.
+	 * Called by the Submissions::processFormSubmission function. It handles the file upload for all "File" Field types.
 	 * @param $params
 	 * @return array
 	 */
@@ -101,8 +120,7 @@ END;
 				continue;
 			}
 
-			list($success, $message, $filename) = self::uploadSubmissionFile($form_id, $submission_id,
-				$file_field_info);
+			list($success, $message, $filename) = self::uploadSubmissionFile($form_id, $submission_id, $file_field_info);
 			if (!$success) {
 				$problem_files[] = array($_FILES[$field_name]["name"], $message);
 			} else {
@@ -317,14 +335,12 @@ END;
 
 
 	/**
-	 * Handles all the actual work for uploading a file. Called by: FormTools\\Submissions::updateSubmission
+	 * Handles the work for uploading ALL files across all fields in the form. Called by Submissions::updateSubmission().
 	 * @param $params
 	 * @return array
 	 */
-	public static function updateSubmissionHook($params)
+	public static function updateSubmissionHook($params, $L)
 	{
-		$LANG = Core::$L;
-
 		$file_fields = $params["file_fields"];
 
 		if (empty($file_fields)) {
@@ -340,6 +356,7 @@ END;
 			"success" => true
 		);
 
+		$num_uploaded_files = 0;
 		foreach ($file_fields as $file_field_info) {
 			$field_type_id = $file_field_info["field_info"]["field_type_id"];
 			$field_name = $file_field_info["field_info"]["field_name"];
@@ -348,21 +365,48 @@ END;
 				continue;
 			}
 
-			// nothing was included in this field, just ignore it
+			// nothing was included in this field, just ignore it - TODO
 			if (empty($_FILES[$field_name]["name"])) {
 				continue;
 			}
 
-			list($success, $message) = self::uploadSubmissionFile($form_id, $submission_id, $file_field_info);
-			if (!$success) {
-				$problem_files[] = array($_FILES[$field_name]["name"], $message);
-			} else {
-				$return_info["message"] = $message;
-			}
+			list ($success, $uploaded_files, $errors) = self::uploadSubmissionFile($form_id, $submission_id, $file_field_info, $L);
+			$num_uploaded_files += count($uploaded_files);
+
+			//if (!$success) {
+//				$problem_files[] = array($_FILES[$field_name]["name"], $message);
+//			} else {
+//				$return_info["message"] = $message;
+//			}
+
+			// if nothing was valid, just error out now and show the appropriate error(s)
+//			$lines = array();
+//			if (count($file_size_errors) == 1) {
+//				$lines[] = General::evalSmartyString($L["notify_file_too_large"], array(
+//					"filename" => $file_size_errors[0]["filename"],
+//					"file_size" => $file_size_errors[0]["actual_size"],
+//					"max_file_size" => $file_size_errors[0]["max_file_size"]
+//				));
+//			} else if (count($file_size_errors) > 1) {
+//				$lines[] = General::evalSmartyString($L["notify_files_too_large"], array(
+//					"field_title" => $file_field_info["field_info_info"]["field_title"],
+//					"file_size" => $file_upload_max_size,
+//					"file_list" => implode("</b>, <b>", $file_size_errors)
+//				));
+//			}
+//
+//			return array(false, implode("<br />", $lines));
+//		}
+
+			// $LANG["notify_unsupported_file_extension"]
+			// $L["notify_file_too_large"] = "The {filename} file is too large. The file was {\$FILESIZE}KB, but the maximum permitted file upload size is {\$MAXFILESIZE}KB.";
+			// $error = General::evalSmartyString($LANG["notify_file_too_large"], $placeholders);
+
+
 		}
 
 		if (!empty($problem_files)) {
-			$message = $LANG["notify_submission_updated_file_problems"] . "<br /><br />";
+			$message = $L["notify_submission_updated_file_problems"] . "<br /><br />";
 			foreach ($problem_files as $problem) {
 				$message .= "&bull; <b>{$problem[0]}</b>: $problem[1]<br />\n";
 			}
@@ -378,22 +422,16 @@ END;
 
 
 	/**
-	 * Uploads a file for a particular form submission field. This is called AFTER the submission has already been
-	 * added to the database so there's an available, valid submission ID. It uploads the file to the appropriate
-	 * folder then updates the database record.
-	 *
-	 * Since any submission file field can only ever store a single file at once, this function automatically deletes
-	 * the old file in the event of the new file being successfully uploaded.
+	 * Uploads a file for a particular form submission field.
 	 *
 	 * @param integer $form_id the unique form ID
 	 * @param integer $submission_id a unique submission ID
 	 * @param array $file_field_info
 	 * @return array returns array with indexes:<br/>
 	 *               [0]: true/false (success / failure)<br/>
-	 *               [1]: message string<br/>
-	 *               [2]: If success, the filename of the uploaded file
+	 *               [1]: message string
 	 */
-	public static function uploadSubmissionFile($form_id, $submission_id, $file_field_info)
+	public static function uploadSubmissionFile($form_id, $submission_id, $file_field_info, $L)
 	{
 		$db = Core::$db;
 		$LANG = Core::$L;
@@ -420,19 +458,18 @@ END;
 		$fileinfo = self::extractSingleFieldFileUploadData($is_multiple_files, $field_name, $_FILES);
 
 		$final_file_upload_info = array();
-		$errors = array();
+		$file_size_errors = array();
+		$file_extension_errors = array();
+
 		foreach ($fileinfo as $row) {
 
-			// check file size
+			// check the file isn't too large
 			if ($row["filesize"] > $file_upload_max_size) {
-				$placeholders = array(
-					"FILESIZE" => round($row["filesize"], 1),
-					"MAXFILESIZE" => $file_upload_max_size
+				$file_size_errors[] = array(
+					"filename" => $row["filename"],
+					"actual_size" => round($row["filesize"], 1),
+					"max_file_size" => $file_upload_max_size
 				);
-
-				// TODO if MULTI, need better error message
-				$error = General::evalSmartyString($LANG["notify_file_too_large"], $placeholders);
-				$errors[] = $error;
 				continue;
 			}
 
@@ -446,16 +483,14 @@ END;
 
 				foreach ($raw_extensions as $ext) {
 					$clean_extension = str_replace(".", "", trim($ext)); // remove whitespace and periods
-
 					if (preg_match("/$clean_extension$/i", $row["filename"])) {
 						$is_valid_extension = true;
 					}
 				}
 			}
 
-			// not a valid extension - inform the user
 			if (!$is_valid_extension) {
-				$errors[] = $LANG["notify_unsupported_file_extension"]; // TODO error cleanup for MULTI
+				$file_extension_errors[] = $row["filename"];
 				continue;
 			}
 
@@ -486,9 +521,7 @@ END;
 			}
 		}
 
-		// since we can upload multiple files at once, SOME may success, some may fail. The best behaviour is
-		// to upload as much as we can, then list errors for any fields that failed
-
+		// update the database record with whatever's been uploaded.
 		if (!empty($successfully_uploaded_files)) {
 			if ($is_multiple_files) {
 				$existing_files = empty($old_filename) ? array() : explode(":", $old_filename);
@@ -496,7 +529,8 @@ END;
 				$file_list = array_merge($existing_files, $new_files);
 				$file_list_str = implode(":", $file_list);
 			} else {
-				$file_list_str = implode(":", $successfully_uploaded_files);
+				$file_list = $successfully_uploaded_files;
+				$file_list_str = implode(":", $file_list);
 			}
 
 			try {
@@ -511,15 +545,18 @@ END;
 				));
 				$db->execute();
 
-				// TODO
-				return array(true, $LANG["notify_file_uploaded"], $file_list);
+				return array(true, $file_list, array(
+					"file_size_errors" => $file_size_errors,
+					"file_extension_errors" => $file_extension_errors
+				));
+
 			} catch (Exception $e) {
 
 				// TPODOP
 				return array(false, $LANG["notify_file_not_uploaded"] . ": " . $e->getMessage());
 			}
 		} else {
-			return array(false, $LANG["notify_file_not_uploaded"] . "..... TODO");
+			return array(false, $LANG["notify_file_not_uploaded"]);
 		}
 	}
 
@@ -539,7 +576,7 @@ END;
 	 *               [0]: true/false (success / failure)<br/>
 	 *               [1]: message string<br/>
 	 */
-	public static function deleteFileSubmission($form_id, $submission_id, $field_id, $files, $force_delete, $L)
+	public static function deleteFilesFromField($form_id, $submission_id, $field_id, $files, $force_delete, $L)
 	{
 		$db = Core::$db;
 
@@ -572,6 +609,7 @@ END;
 		$update_database_record = false;
 		$updated_field_value = '';
 		$success = true;
+		$undeleted_files = array();
 
 		if ($force_delete) {
 			self::deleteFiles($file_folder, $files_to_delete);
@@ -593,7 +631,7 @@ END;
 					}
 				}
 			} else {
-				// here there was a problem deleting one of the actual files. Cater the display message to precisely
+				// here there was a problem deleting one of the actual files. Cater the display message to say precisely
 				// what went wrong, but update the database to remove any files that were successfully uploaded
 				$num_deleted = count($files_to_delete) - count($undeleted_files);
 				$success = false;
@@ -625,10 +663,17 @@ END;
 			$db->execute();
 		}
 
-		// TODO look this over. Maybe just move back to Module would make things easiest
+		// TODO look this over. Maybe just move back to Module would make things easiest...
 		extract(CoreHooks::processHookCalls("end", compact("form_id", "submission_id", "field_id", "force_delete"), array("success", "message")), EXTR_OVERWRITE);
 
-		return array($success, $message);
+		$deleted_files = array();
+		foreach ($existing_files as $file) {
+			if (in_array($file, $files_to_delete) && !in_array($file, $undeleted_files)) {
+				$deleted_files[] = $file;
+			}
+		}
+
+		return array($success, $message, $deleted_files);
 	}
 
 
@@ -762,9 +807,9 @@ END;
 		$show_clear_error_line = true;
 		if (!empty($missing_files)) {
 			if (count($missing_files) === 1) {
-				$lines[] = "{$indent}The <b>{$missing_files[0]}</b> file hasn't been deleted because it doesn't exist in the expected folder (<b>/$folder</b>).";
+				$lines[] = "{$indent}The <b>{$missing_files[0]}</b> file hasn't been deleted because it doesn't exist in the expected folder (<b>$folder</b>).";
 			} else {
-				$lines[] = "{$indent}The following files haven't been deleted because they doesn't exist in the expected folder (<b>/$folder</b>): <b>"
+				$lines[] = "{$indent}The following files haven't been deleted because they doesn't exist in the expected folder (<b>$folder</b>): <b>"
 					. implode("</b>, <b>", $missing_files) . "</b>.";
 			}
 
