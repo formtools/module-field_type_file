@@ -24,12 +24,11 @@ $L["notify_file_not_deleted_permissions"] = "The file has not been deleted becau
 $L["notify_file_not_deleted_unknown_error"] = "There was an unknown error when trying to delete this file. <a href=\"#\" onclick=\"{\$js_link}\">Click here</a> to ignore this error message and just remove the reference from the database.";
 
 $L["notify_file_too_large"] = "The <b>{\$filename}</b> file is too large. The file was {\$file_size}KB, but the maximum permitted file upload size is {\$max_file_size}KB.";
-$L["notify_files_too_large"] = "The maximum file size for the <b>{\$field_title}</b> is {\$file_size}KB, but the following files are too large: <b>{\$file_list}</b>";
+$L["notify_files_too_large"] = "The following files are too large: <b>{\$file_list}</b>";
 
 $L["notify_submission_no_field_id"] = "This submission's field ID was not found.";
 
 $L["notify_submission_updated_file_problems"] = "Your submission was updated, but the following file(s) had problems:";
-
 
 $L["confirm_delete_submission_files"] = "Are you sure you want to delete these files?";
 

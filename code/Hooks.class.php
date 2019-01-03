@@ -38,7 +38,6 @@ class Hooks
 if (typeof g.messages == 'undefined') {
 	g.messages = {};
 }
-
 g.messages["confirm_delete_submission_file"] = "{$LANG["confirm_delete_submission_file"]}";
 g.messages["confirm_delete_submission_files"] = "{$L["confirm_delete_submission_files"]}";
 g.messages["phrase_please_confirm"] = "{$LANG["phrase_please_confirm"]}";
@@ -370,6 +369,7 @@ END;
 				continue;
 			}
 
+			list ($success, $uploaded_files, $errors) = self::uploadSubmissionFile($form_id, $submission_id, $file_field_info, $L);
 			$num_uploaded_files += count($uploaded_files);
 
 			if (!$success) {
@@ -379,62 +379,47 @@ END;
 				$file_size_errors = array_merge($file_size_errors, $errors["file_size_errors"]);
 			}
 			if (!empty($errors["file_extension_errors"])) {
-				$file_extension_errors = array_merge($file_extension_errors, $errors["file_extension_errors"]);
+				$file_extension_errors = array_merge($errors["file_extension_errors"]);
 			}
 			if (!empty($errors["file_rename_errors"])) {
-				$file_rename_errors = array_merge($file_rename_errors, $errors["file_rename_errors"]);
+				$file_rename_errors[] = $errors["file_rename_errors"];
 			}
 		}
 
-		//print_r($file_size_errors);
-
 		$lines = array();
 		if (!empty($file_size_errors) || !empty($file_extension_errors) || !empty($file_rename_errors)) {
-
-			if ($num_uploaded_files > 0) {
-				$lines[] = $L["notify_submission_updated_file_problems"];
-			}
+			$lines[] = $L["notify_submission_updated_file_problems"];
 
 			if (count($file_size_errors) == 1) {
-				$lines[] = General::evalSmartyString($L["notify_file_too_large"], array(
+				$lines[] = "&bull; " . General::evalSmartyString($L["notify_file_too_large"], array(
 					"filename" => $file_size_errors[0]["filename"],
 					"file_size" => $file_size_errors[0]["actual_size"],
 					"max_file_size" => $file_size_errors[0]["max_file_size"]
 				));
 			} else if (count($file_size_errors) > 1) {
-				$lines[] = General::evalSmartyString($L["notify_files_too_large"], array(
-					"field_title" => $file_field_info["field_info_info"]["field_title"],
-					"file_size" => $file_upload_max_size,
-					"file_list" => implode("</b>, <b>", $file_size_errors)
+				$filenames = array();
+				foreach ($file_size_errors as $row) {
+					$filenames[] = $row["filename"];
+				}
+				$lines[] = "&bull; " . General::evalSmartyString($L["notify_files_too_large"], array(
+					"file_list" => implode("</b>, <b>", $filenames)
 				));
 			}
 		}
-
-		echo $all_successful;
-
 
 		// $LANG["notify_unsupported_file_extension"]
 		// $L["notify_file_too_large"] = "The {filename} file is too large. The file was {\$FILESIZE}KB, but the maximum permitted file upload size is {\$MAXFILESIZE}KB.";
 		// $error = General::evalSmartyString($LANG["notify_file_too_large"], $placeholders);
 
-		return array(
-			"success" => $all_successful,
-			"message" => implode("<br />", $lines)
+		$return_info = array(
+			"success" => $all_successful
 		);
 
-//		if (!empty($problem_files)) {
-//			$message = $L["notify_submission_updated_file_problems"] . "<br /><br />";
-//			foreach ($problem_files as $problem) {
-//				$message .= "&bull; <b>{$problem[0]}</b>: $problem[1]<br />\n";
-//			}
-//
-//			$return_info = array(
-//				"success" => false,
-//				"message" => $message
-//			);
-//		}
-//
-//		return $return_info;
+		if (!empty($lines)) {
+			$return_info["message"] = implode("<br />", $lines);
+		}
+
+		return $return_info;
 	}
 
 
@@ -448,7 +433,7 @@ END;
 	 *               [0]: true/false (success / failure)<br/>
 	 *               [1]: message string
 	 */
-	public static function uploadSubmissionFile($form_id, $submission_id, $file_field_info, $L)
+	public static function uploadSubmissionFile($form_id, $submission_id, $file_field_info)
 	{
 		$db = Core::$db;
 		$LANG = Core::$L;

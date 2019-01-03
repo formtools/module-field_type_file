@@ -161,14 +161,14 @@ files_ns.delete_files_response = function (data) {
 	$("#confirm_delete_dialog").dialog("close");
 
 	if (data.success) {
-		// remove any rows that were deleted
-		var group = $("#cf_file_" + data.field_id + "_content").closest(".cf_file");
+		var group = $("#cf_file_" + data.field_id).closest(".cf_file");
 		for (var i=0; i<data.deleted_files.length; i++) {
 			group.find(".cf_file_row_cb[value='" + data.deleted_files[i] + "']").closest("li").remove();
 		}
 
-		// $("#cf_file_" + field_id + "_content").html("");
-		// $("#cf_file_" + field_id + "_no_content").show();
+		if (group.find(".cf_file_row_cb").length === 0) {
+			group.find(".cf_file_list,.cf_file_delete_selected").hide();
+		}
 	}
 
 	ft.display_message(data.target_message_id, data.success, data.message);

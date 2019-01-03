@@ -53,24 +53,8 @@ END;
 END;
 
 
-	/*
-	scenarios:
-
-	1. no data
-		- (single + multiple) show file upload field only
-	2. one item
-		- (single + multiple) show item, delete button, file upload field (same row)
-	2. two items
-	 	- show table
-		- underneath: delete button, file upload field
-
-	scenario:
-	- in multiple, user deletes all but one.
-		- needs to switch
-	*/
-
 	private static $editFieldSmartyMarkup = <<< END
-<div class="cf_file">
+<div class="cf_file" id="cf_file_{\$FIELD_ID}">
     <input type="hidden" class="cf_file_field_id" value="{\$FIELD_ID}" />
 	{assign var=filenames value=":"|explode:\$VALUE} 
 	{assign var=num_files value=\$filenames|@count}
