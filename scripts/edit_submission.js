@@ -165,11 +165,9 @@ files_ns.delete_files_response = function (data) {
 		for (var i=0; i<data.deleted_files.length; i++) {
 			group.find(".cf_file_row_cb[value='" + data.deleted_files[i] + "']").closest("li").remove();
 		}
-
 		if (group.find(".cf_file_row_cb").length === 0) {
 			group.find(".cf_file_list,.cf_file_delete_selected").hide();
 		}
 	}
-
 	ft.display_message(data.target_message_id, data.success, data.message);
 };

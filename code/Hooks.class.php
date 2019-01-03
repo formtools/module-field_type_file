@@ -405,11 +405,21 @@ END;
 					"file_list" => implode("</b>, <b>", $filenames)
 				));
 			}
-		}
 
-		// $LANG["notify_unsupported_file_extension"]
-		// $L["notify_file_too_large"] = "The {filename} file is too large. The file was {\$FILESIZE}KB, but the maximum permitted file upload size is {\$MAXFILESIZE}KB.";
-		// $error = General::evalSmartyString($LANG["notify_file_too_large"], $placeholders);
+			if (count($file_extension_errors) == 1) {
+				$lines[] = "&bull; {$L["notify_upload_invalid_file_extension"]}";
+			} else if (count($file_extension_errors) > 1) {
+				$lines[] = "&bull; " . General::evalSmartyString($L["notify_upload_invalid_file_extensions"], array(
+					"file_list" => implode("</b>, <b>", $file_extension_errors)
+				));
+			}
+
+			if (count($file_rename_errors) > 0) {
+				$lines[] = "&bull; " . General::evalSmartyString($L["notify_unable_to_copy_file_to_target_folder"], array(
+					"file_list" => implode("</b>, <b>", $file_rename_errors)
+				));
+			}
+		}
 
 		$return_info = array(
 			"success" => $all_successful

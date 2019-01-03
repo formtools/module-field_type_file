@@ -59,6 +59,8 @@ END;
 	{assign var=filenames value=":"|explode:\$VALUE} 
 	{assign var=num_files value=\$filenames|@count}
 
+[{\$ben123}]
+
 	<ul class="cf_file_list" {if empty(\$VALUE)}style="display: none"{/if}>
 		<li class="cf_file_top_row">
 			<input type="checkbox" class="cf_file_toggle_all" />
@@ -69,8 +71,8 @@ END;
 			<input type="checkbox" name="cf_files[]" class="cf_file_row_cb" value="{\$filename}" />
 			<a href="{\$folder_url}/{\$filename}" 
 				{if \$use_fancybox == "yes"}class="fancybox"{/if}>{\$filename}</a>
-			{if \$num_files == 1}
-				<input type="button" class="cf_delete_file" value="{\$LANG.phrase_delete_file|upper}" />
+			{if \$num_files == 1 && \$multiple_files == "no"}
+				<input type="button" class="cf_delete_file" value="{\$LANG.phrase_delete_file}" />
 			{/if}
 		</li>
 		{/foreach}
