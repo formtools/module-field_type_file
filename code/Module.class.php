@@ -155,12 +155,14 @@ class Module extends FormToolsModule
 
 	public function processFormSubmissionHook($params)
 	{
-		return Hooks::processFormSubmissionHook($params);
+		$L = $this->getLangStrings();
+		return Hooks::processFormSubmissionHook($params, $L);
 	}
 
 	public function apiProcessFormSubmissionHook($params)
 	{
-		return Hooks::apiProcessFormSubmissionHook($params);
+		$L = $this->getLangStrings();
+		return Hooks::apiProcessFormSubmissionHook($params, $L);
 	}
 
 	public function deleteSubmissionsHook($params)

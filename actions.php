@@ -59,11 +59,13 @@ switch ($request["action"]) {
 		$submission_id = $_SESSION["form_builder_{$published_form_id}"]["form_tools_submission_id"];
 		$field_id = $request["field_id"];
 		$force_delete = ($request["force_delete"] == "true") ? true : false;
+		$files = $request["files"];
 
-		list ($success, $message) = $module->deleteFileSubmission($form_id, $submission_id, $field_id, $force_delete);
+		list ($success, $message, $deleted_files) = $module->deleteFilesFromField($form_id, $submission_id, $field_id, $files, $force_delete);
 		output_json_with_return_vars(array(
 			"success" => 1,
-			"message" => $message
+			"message" => $message,
+			"deleted_files" => $deleted_files
 		));
 		break;
 }

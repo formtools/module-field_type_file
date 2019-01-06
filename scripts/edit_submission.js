@@ -5,6 +5,16 @@
 $(function () {
 	var supportsMultiFileUpload = 'multiple' in document.createElement('input');
 
+	// in case the user's using a really old browser, disable the multiple option on the file buttons. This allows
+	// the fields to continue to store multiple files - except they are only added to one by one for this particular
+	// user
+	if (!supportsMultiFileUpload) {
+		$(".cf_file_upload_btn").each(function () {
+			$(this).attr('name', $(this).attr('name').replace(/\[]$/, ''));
+			$(this).removeAttr("multiple");
+		});
+	}
+
 	var updateDeleteSelectedBtn = function (group, enabled) {
 		var btn = $(group).find(".cf_file_delete_selected");
 		if (enabled) {
@@ -16,13 +26,21 @@ $(function () {
 
 	$(".cf_delete_file,.cf_file_delete_selected").each(function () {
 		var group = $(this).closest(".cf_file");
+		var is_multiple = group.hasClass("cf_file_multiple");
 		var field_id = group.find(".cf_file_field_id").val();
 
 		$(this).bind("click", function () {
 			var files = [];
-			group.find(".cf_file_row_cb:checked").each(function () {
-				files.push($(this).val());
-			});
+			if (is_multiple) {
+				group.find(".cf_file_row_cb:checked").each(function () {
+					files.push($(this).val());
+				});
+			} else {
+				var file = group.find(".cf_file_row_cb");
+				if (file) {
+					files.push(file.val());
+				}
+			}
 			return files_ns.delete_submission_files(field_id, files, false);
 		});
 	});
@@ -99,7 +117,6 @@ files_ns.check_required = function () {
  */
 files_ns.delete_submission_files = function (field_id, files, force_delete) {
 	var page_url = g.root_url + "/modules/field_type_file/actions.php";
-
 	var data = {
 		action: "delete_submission_files",
 		field_id: field_id,

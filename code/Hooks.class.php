@@ -79,7 +79,7 @@ END;
 	 * @param $params
 	 * @return array
 	 */
-	public static function processFormSubmissionHook($params)
+	public static function processFormSubmissionHook($params, $L)
 	{
 		$LANG = Core::$L;
 
@@ -119,7 +119,7 @@ END;
 				continue;
 			}
 
-			list($success, $message, $filename) = self::uploadSubmissionFile($form_id, $submission_id, $file_field_info);
+			list($success, $message, $filename) = self::uploadSubmissionFile($form_id, $submission_id, $file_field_info, $L);
 			if (!$success) {
 				$problem_files[] = array($_FILES[$field_name]["name"], $message);
 			} else {
@@ -154,7 +154,7 @@ END;
 	 * @param $params
 	 * @return array
 	 */
-	public static function apiProcessFormSubmissionHook($params)
+	public static function apiProcessFormSubmissionHook($params, $L)
 	{
 		$LANG = Core::$L;
 
@@ -192,7 +192,7 @@ END;
 				continue;
 			}
 
-			list($success, $message, $filename) = self::uploadSubmissionFile($form_id, $submission_id, $file_field_info);
+			list($success, $message, $filename) = self::uploadSubmissionFile($form_id, $submission_id, $file_field_info, $L);
 			if (!$success) {
 				$problem_files[] = array($_FILES[$field_name]["name"], $message);
 			} else {
@@ -336,6 +336,7 @@ END;
 	/**
 	 * Handles the work for uploading ALL files across all fields in the form. Called by Submissions::updateSubmission().
 	 * @param $params
+	 * @param $L
 	 * @return array
 	 */
 	public static function updateSubmissionHook($params, $L)
@@ -439,11 +440,12 @@ END;
 	 * @param integer $form_id the unique form ID
 	 * @param integer $submission_id a unique submission ID
 	 * @param array $file_field_info
+	 * @param array $L
 	 * @return array returns array with indexes:<br/>
 	 *               [0]: true/false (success / failure)<br/>
 	 *               [1]: message string
 	 */
-	public static function uploadSubmissionFile($form_id, $submission_id, $file_field_info)
+	public static function uploadSubmissionFile($form_id, $submission_id, $file_field_info, $L)
 	{
 		$db = Core::$db;
 		$LANG = Core::$L;
@@ -453,7 +455,7 @@ END;
 
 		// if the column name wasn't found, the $field_id passed in was invalid. Somethin' aint right...
 		if (empty($col_name)) {
-			return array(false, $LANG["notify_submission_no_field_id"]);
+			return array(false, $L["notify_submission_no_field_id"]);
 		}
 
 		$is_multiple_files = $file_field_info["settings"]["multiple_files"];
@@ -465,6 +467,12 @@ END;
 		// check upload folder is valid and writable
 		if (!is_dir($file_upload_dir) || !is_writable($file_upload_dir)) {
 			return array(false, $LANG["notify_invalid_field_upload_folder"]);
+		}
+
+		// if a user is using a browser that doesn't support multiple file uploads (IE10 and before) the field may be
+		// CONFIGURED as a multiple file upload field, but the data is for a single field
+		if ($is_multiple_files == "yes" && !is_array($_FILES[$field_name]["name"])) {
+			$is_multiple_files = "no";
 		}
 
 		$fileinfo = self::extractSingleFieldFileUploadData($is_multiple_files, $field_name, $_FILES);

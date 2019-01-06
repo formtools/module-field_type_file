@@ -32,16 +32,30 @@ class Settings
 
 	private static $resourcesCss = <<< END
 .cf_file_list {
+	display: none;
 	list-style-type: none;
 	margin: 0 0 4px;
 	padding: 0;
 }
+.cf_file.cf_file_has_items .cf_file_list {
+	display: block;
+}
 .cf_file_top_row {
 	border-bottom: 1px solid #dddddd;
+	display: none;
+}
+.cf_file.cf_file_has_items.cf_file_multiple .cf_file_top_row {
+	display: block;
 }
 .cf_file_col {
 	font-style: italic;
 	color: #999999;
+}
+.cf_file_row_cb {
+	display: none;
+}
+.cf_file.cf_file_has_items.cf_file_multiple .cf_file_row_cb {
+	display: inline-block;
 }
 END;
 
@@ -52,19 +66,22 @@ END;
 {/if}
 END;
 
-
 	private static $editFieldSmartyMarkup = <<< END
-<div class="cf_file" id="cf_file_{\$FIELD_ID}">
+{if empty(\$VALUE)}
+	{assign var=filenames value=[]}
+{else}
+	{assign var=filenames value=":"|explode:\$VALUE}
+{/if} 
+{assign var=num_files value=\$filenames|@count}
+
+<div class="cf_file {if \$num_files > 0}cf_file_has_items{/if} {if \$multiple_files == 'yes'}cf_file_multiple{/if}"
+	id="cf_file_{\$FIELD_ID}">
     <input type="hidden" class="cf_file_field_id" value="{\$FIELD_ID}" />
-	{assign var=filenames value=":"|explode:\$VALUE} 
-	{assign var=num_files value=\$filenames|@count}
 
-[{\$ben123}]
-
-	<ul class="cf_file_list" {if empty(\$VALUE)}style="display: none"{/if}>
+	<ul class="cf_file_list">
 		<li class="cf_file_top_row">
 			<input type="checkbox" class="cf_file_toggle_all" />
-			<span class="cf_file_col">Filename</span>
+			<span class="cf_file_col">{\$LANG.word_file}</span>
 		</li>
 		{foreach from=\$filenames item=filename}
 		<li>
@@ -77,9 +94,13 @@ END;
 		</li>
 		{/foreach}
 	</ul>
-	<input type="button" value="Delete Selected" class="cf_file_delete_selected"
-		disabled="disabled" {if empty(\$VALUE)}style="display: none"{/if} />
-	<input type="file" name="{\$NAME}{if \$multiple_files == "yes"}[]{/if}" {if \$multiple_files == "yes"}multiple="multiple"{/if}" /> 
+
+	<input type="button" value="{\$LANG.word_delete}" class="cf_file_delete_selected"
+		disabled="disabled" {if empty(\$VALUE) || \$multiple_files == 'no'}style="display: none"{/if} />
+
+	<input type="file" class="cf_file_upload_btn" name="{\$NAME}{if \$multiple_files == "yes"}[]{/if}"
+		{if \$multiple_files == "yes"}multiple="multiple"{/if}
+		{if \$multiple_files == "no" && \$num_files > 0}style="display:none"{/if} /> 
 
     <div id="file_field_{\$FIELD_ID}_message_id" class="cf_file_message"></div>
 </div>
@@ -89,10 +110,6 @@ END;
 {/if}
 END;
 
-//
-//<div id="cf_file_{\$FIELD_ID}_no_content" {if \$multiple_files === "no" || \$VALUE}style="display:none"{/if}>
-//<input type="file" name="{\$NAME}{if \$multiple_files == "yes"}[]{/if}" {if \$multiple_files == "yes"}multiple="multiple"{/if}" />
-//</div>
 
 	private static $fieldSettings = array(
 		array(
