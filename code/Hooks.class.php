@@ -224,6 +224,9 @@ END;
 	/**
 	 * Called whenever a submission or submissions are deleted. It's the hook for the ft_delete_submission_files
 	 * Core function.
+	 *
+	 * TODO check over the error strings here, they look suspiciously wrong.
+	 *
 	 * @param $params
 	 * @param $L
 	 * @return array
@@ -334,7 +337,8 @@ END;
 
 
 	/**
-	 * Handles the work for uploading ALL files across all fields in the form. Called by Submissions::updateSubmission().
+	 * Handles the work for uploading ALL files across all fields in the form. Called once by
+	 * Submissions::updateSubmission() at the end.
 	 * @param $params
 	 * @param $L
 	 * @return array
@@ -477,6 +481,10 @@ END;
 
 		$fileinfo = self::extractSingleFieldFileUploadData($is_multiple_files, $field_name, $_FILES);
 
+		if (empty($fileinfo)) {
+			return array(true, "");
+		}
+
 		$final_file_upload_info = array();
 		$file_size_errors = array();
 		$file_extension_errors = array();
@@ -546,7 +554,7 @@ END;
 		$file_list = $successfully_uploaded_files;
 		if (!empty($successfully_uploaded_files)) {
 			$success = true;
-			if ($is_multiple_files) {
+			if ($is_multiple_files == "yes") {
 				$existing_files = empty($old_filename) ? array() : explode(":", $old_filename);
 				$new_files = $successfully_uploaded_files;
 				$file_list = array_merge($existing_files, $new_files);
@@ -621,19 +629,23 @@ END;
 		$file_folder = $field_settings["folder_path"];
 
 		$update_database_record = false;
-		$updated_field_value = '';
 		$success = true;
 		$undeleted_files = array();
+		$remaining_files = array();
 
 		if ($force_delete) {
 			self::deleteFiles($file_folder, $files_to_delete);
-			$message = $L["notify_file_deleted"];
 			$update_database_record = true;
-		} else {
+			$message = count($files_to_delete) === 1 ? $L["notify_file_deleted"] : $L["notify_files_deleted"];
 
+			foreach ($existing_files as $file) {
+				if (!in_array($file, $files_to_delete)) {
+					$remaining_files[] = $file;
+				}
+			}
+		} else {
 			list($all_deleted_successfully, $undeleted_files) = self::deleteFiles($file_folder, $files_to_delete);
 
-			$remaining_files = array();
 			if ($all_deleted_successfully) {
 				$success = true;
 				$update_database_record = true;
@@ -649,7 +661,7 @@ END;
 				// what went wrong, but update the database to remove any files that were successfully uploaded
 				$num_deleted = count($files_to_delete) - count($undeleted_files);
 				$success = false;
-				$message = self::getDeleteFileErrorMessage($file_folder, $num_deleted, $undeleted_files, $L);
+				$message = self::getDeleteFileErrorMessage($file_folder, $field_id, $num_deleted, $undeleted_files, $L);
 
 				foreach ($existing_files as $file) {
 					if (!in_array($file, $files_to_delete) || in_array($file, $undeleted_files)) {
@@ -657,8 +669,8 @@ END;
 					}
 				}
 			}
-			$updated_field_value = implode(":", $remaining_files);
 		}
+		$updated_field_value = implode(":", $remaining_files);
 
 		// if need be, update the database record to remove the reference to the file in the database. Generally this
 		// should always work, but in case something funky happened, like the permissions on the file were changed to
@@ -710,11 +722,15 @@ END;
 		// clean up the filename according to the whitelist chars
 		$file_data = array();
 		if ($is_multiple_files == "no") {
-			$file_data[] = self::getSingleUploadedFileData($file_info["name"], $file_info["size"], $file_info["tmp_name"]);
+			if (!empty($file_info["name"])) {
+				$file_data[] = self::getSingleUploadedFileData($file_info["name"], $file_info["size"], $file_info["tmp_name"]);
+			}
 		} else {
 			$num_files = count($files[$field_name]["name"]);
 			for ($i = 0; $i < $num_files; $i++) {
-				$file_data[] = self::getSingleUploadedFileData($file_info["name"][$i], $file_info["size"][$i], $file_info["tmp_name"][$i]);
+				if (!empty($file_info["name"][$i])) {
+					$file_data[] = self::getSingleUploadedFileData($file_info["name"][$i], $file_info["size"][$i], $file_info["tmp_name"][$i]);
+				}
 			}
 		}
 
@@ -758,12 +774,11 @@ END;
 	 */
 	private static function removeOldSubmissionFieldFiles($submission_field_value, $file_upload_dir)
 	{
-		if (!empty($submission_field_value)) {
+		if (empty($submission_field_value)) {
 			return;
 		}
 
 		$files = explode(":", $submission_field_value);
-
 		foreach ($files as $file) {
 			if (file_exists("$file_upload_dir/$file")) {
 				@unlink("$file_upload_dir/$file");
@@ -790,17 +805,22 @@ END;
 	/**
 	 * Constructs a human-friendly message after one or more files weren't deleted for a particular form field.
 	 * @param $folder
+	 * @param $field_id
 	 * @param $num_deleted
 	 * @param $undeleted_files
 	 * @param $L
 	 * @return string
 	 */
-	private static function getDeleteFileErrorMessage($folder, $num_deleted, $undeleted_files, $L)
+	private static function getDeleteFileErrorMessage($folder, $field_id, $num_deleted, $undeleted_files, $L)
 	{
 		$lines = array();
 		$indent = "";
 		if ($num_deleted > 0) {
-			$lines[] = "<b>{$num_deleted}</b> files were successfully deleted, but the following errors occurred:";
+			if ($num_deleted == 1) {
+				$lines[] = $L["notify_file_deleted_with_error"];
+			} else {
+				$lines[] = General::evalSmartyString($L["notify_files_deleted_with_error"], array("num_files" => $num_deleted));
+			}
 			$indent = "&bull; ";
 		}
 
@@ -819,45 +839,55 @@ END;
 			}
 		}
 
-		$show_clear_error_line = true;
+
+		$message = "";
 		if (!empty($missing_files)) {
 			if (count($missing_files) === 1) {
-				$lines[] = "{$indent}The <b>{$missing_files[0]}</b> file hasn't been deleted because it doesn't exist in the expected folder (<b>$folder</b>).";
+				$message = General::evalSmartyString($indent . $L["notify_file_not_deleted_missing"], array(
+					"file" => $missing_files[0],
+					"folder" => $folder
+				));
 			} else {
-				$lines[] = "{$indent}The following files haven't been deleted because they doesn't exist in the expected folder (<b>$folder</b>): <b>"
-					. implode("</b>, <b>", $missing_files) . "</b>.";
-			}
-
-//			$replacements = array("js_link" => "return files_ns.delete_submission_file($field_id, true)");
-//			$message = General::evalSmartyString($L["notify_file_not_deleted_no_exist"] . "($folder/$file)", $replacements);
-			if (empty($invalid_permissions) && empty($unknown_errors)) {
-				$lines[] .= "<a href=\"#\" onclick=\"{\$js_link}\">Click here</a> to ignore this error message and just remove the reference from the database.";
-				$show_clear_error_line = false;
+				$message = General::evalSmartyString($indent . $L["notify_files_not_deleted_missing"], array(
+					"folder" => $folder,
+					"file_list" => implode("</b>, <b>", $missing_files)
+				));
 			}
 		}
 
 		if (!empty($invalid_permissions)) {
-
+			if (count($invalid_permissions) === 1) {
+				$message = General::evalSmartyString($indent . $L["notify_file_not_deleted_invalid_permissions"], array(
+					"filename" => $invalid_permissions[0],
+					"folder" => $folder
+				));
+			} else {
+				$message = General::evalSmartyString($indent . $L["notify_files_not_deleted_invalid_permissions"], array(
+					"file_list" => implode("</b>, <b>", $invalid_permissions)
+				));
+			}
 		}
 
-		if ($show_clear_error_line) {
-			$lines[] = "<a href=\"#\">Click here</a> to ignore these errors and remove the references from the submission data.";
+		if (!empty($unknown_errors)) {
+			if (count($unknown_errors) === 1) {
+				$message = General::evalSmartyString($indent . $L["notify_file_not_deleted_unknown_error"], array(
+					"filename" => $unknown_errors[0],
+					"folder" => $folder
+				));
+			} else {
+				$message = General::evalSmartyString($indent . $L["notify_files_not_deleted_unknown_errors"], array(
+					"file_list" => implode("</b>, <b>", $unknown_errors)
+				));
+			}
 		}
 
+		$all_problem_files = array_unique(array_merge($missing_files, $invalid_permissions, $unknown_errors));
 
-//		} else {
-//			if (is_file("$file_folder/$file") && (!is_readable("$file_folder/$file") || !is_writable("$file_folder/$file"))) {
-//				$success = false;
-//				$update_database_record = false;
-//				$replacements = array("js_link" => "return files_ns.delete_submission_file($field_id, true)");
-//				$message = General::evalSmartyString($LANG["notify_file_not_deleted_permissions"], $replacements);
-//			} else {
-//				$success = false;
-//				$update_database_record = false;
-//				$replacements = array("js_link" => "return files_ns.delete_submission_file($field_id, true)");
-//				$message = General::evalSmartyString($LANG["notify_file_not_deleted_unknown_error"], $replacements);
-//			}
-//		}
+		$files_str = "'" . implode("','", $all_problem_files) . "'";
+		$lang_str = (count($all_problem_files) === 1) ? $L["notify_clear_error"] : $L["notify_clear_errors"];
+		$lines[] = $message . " " . General::evalSmartyString($lang_str, array(
+			"js_link" => "return files_ns.delete_submission_files($field_id, [$files_str], true)",
+		));
 
 		return implode("<br />", $lines);
 	}

@@ -34,7 +34,14 @@ class Settings
 .cf_file_list {
 	display: none;
 	list-style-type: none;
-	margin: 0 0 4px;
+	padding: 0;
+	margin: 0;
+}
+.ft_file_multiple.cf_file_list {
+	margin-bottom: 4px;
+}
+.cf_file_list_view {
+	list-style-type: none;
 	padding: 0;
 }
 .cf_file.cf_file_has_items .cf_file_list {
@@ -60,10 +67,17 @@ class Settings
 END;
 
 	private static $viewFieldSmartyMarkup = <<< END
-{if \$VALUE}
-    <a href="{\$folder_url}/{\$VALUE}"
-    {if \$use_fancybox == "yes"}class="fancybox"{/if}>{\$VALUE}</a>
-{/if}
+{if empty(\$VALUE)}
+	{assign var=filenames value=[]}
+{else}
+	{assign var=filenames value=":"|explode:\$VALUE}
+{/if} 
+{foreach from=\$filenames item=filename}
+<li class="cf_file_list_view">
+	<a href="{\$folder_url}/{\$filename}" 
+		{if \$use_fancybox == "yes"}class="fancybox"{/if}>{\$filename}</a>
+</li>
+{/foreach}
 END;
 
 	private static $editFieldSmartyMarkup = <<< END
@@ -164,7 +178,7 @@ END;
 			"field_type" => "textbox",
 			"field_orientation" => "na",
 			"default_value_type" => "dynamic",
-			"default_value" => "file_upload_dir",
+			"default_value" => "file_upload_dir,core",
 			"settings" => array()
 		),
 

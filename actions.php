@@ -45,7 +45,6 @@ switch ($request["action"]) {
 	// be hacked)
 	case "delete_submission_file_standalone":
 		$module = Modules::initModulePage();
-
 		$published_form_id = (isset($request["published_form_id"])) ? $request["published_form_id"] : "";
 
 		if (empty($published_form_id)) {
