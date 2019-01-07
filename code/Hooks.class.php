@@ -101,6 +101,12 @@ END;
 			"redirect_query_params" => $redirect_query_params
 		);
 
+		$num_uploaded_files = 0;
+		$all_successful = true;
+		$file_size_errors = array();
+		$file_extension_errors = array();
+		$file_rename_errors = array();
+
 		foreach ($file_fields as $file_field_info) {
 			$field_id = $file_field_info["field_info"]["field_id"];
 			$field_type_id = $file_field_info["field_info"]["field_type_id"];
@@ -119,16 +125,34 @@ END;
 				continue;
 			}
 
-			list($success, $message, $filename) = self::uploadSubmissionFile($form_id, $submission_id, $file_field_info, $L);
+			list ($success, $uploaded_files, $errors) = self::uploadSubmissionFile($form_id, $submission_id, $file_field_info, $L);
+			$num_uploaded_files += count($uploaded_files);
+
 			if (!$success) {
-				$problem_files[] = array($_FILES[$field_name]["name"], $message);
-			} else {
-				$return_info["message"] = $message;
+				$all_successful = false;
+			}
+			if (!empty($errors["file_size_errors"])) {
+				$file_size_errors = array_merge($file_size_errors, $errors["file_size_errors"]);
+			}
+			if (!empty($errors["file_extension_errors"])) {
+				$file_extension_errors = array_merge($errors["file_extension_errors"]);
+			}
+			if (!empty($errors["file_rename_errors"])) {
+				$file_rename_errors[] = $errors["file_rename_errors"];
+			}
+
+
+			if (empty($file_size_errors) && empty($file_extension_errors) && empty($file_rename_errors)) {
 				if ($include_on_redirect == "yes") {
 					$redirect_query_params[] = "$field_name=" . rawurlencode($filename);
 				}
 			}
 		}
+
+//			if (!$success) {
+//				$problem_files[] = array($_FILES[$field_name]["name"], $message);
+//			} else {
+//			}
 
 		if (!empty($problem_files)) {
 			$message = $LANG["notify_submission_updated_file_problems"] . "<br /><br />";
@@ -225,18 +249,19 @@ END;
 	 * Called whenever a submission or submissions are deleted. It's the hook for the ft_delete_submission_files
 	 * Core function.
 	 *
-	 * TODO check over the error strings here, they look suspiciously wrong.
-	 *
 	 * @param $params
 	 * @param $L
 	 * @return array
 	 */
-	public static function deleteSubmissionHook($params, $L)
+	public static function deleteSubmissionsHook($params, $L)
 	{
 		$file_field_info = $params["file_field_info"];
-
-		$problems = array();
 		$module_field_type_id = FieldTypes::getFieldTypeIdByIdentifier("file");
+
+		$file_missing_errors = array();
+		$file_permissions_errors = array();
+		$file_unknown_errors = array();
+
 		foreach ($file_field_info as $info) {
 			if ($info["field_type_id"] != $module_field_type_id) {
 				continue;
@@ -244,30 +269,26 @@ END;
 
 			$field_id = $info["field_id"];
 			$filename = $info["filename"];
-
 			$field_settings = Fields::getFieldSettings($field_id);
 			$folder = $field_settings["folder_path"];
 
 			if (!@unlink("$folder/$filename")) {
 				if (!is_file("$folder/$filename")) {
-					$problems[] = array(
-						"filename" => $filename,
-						"error" => General::evalSmartyString($L["notify_file_not_deleted_no_exist"], array("folder" => $folder))
-					);
+					$file_missing_errors[] = $filename;
 				} else {
 					if (is_file("$folder/$filename") && (!is_readable("$folder/$filename") || !is_writable("$folder/$filename"))) {
-						$problems[] = array(
-							"filename" => $filename,
-							"error" => General::evalSmartyString($L["notify_file_not_deleted_permissions"], array("folder" => $folder))
-						);
+						$file_permissions_errors[] = $filename;
 					} else {
-						$problems[] = array(
-							"filename" => $filename,
-							"error" => General::evalSmartyString($L["notify_file_not_deleted_unknown_error"], array("folder" => $folder))
-						);
+						$file_unknown_errors[] = $filename;
 					}
 				}
 			}
+		}
+
+		// TODO
+		$problems = array();
+		if (!empty($file_missing_errors) || !empty($file_permissions_errors) || !empty($file_unknown_errors)) {
+			//"The file was deleted, but there were problems delete"
 		}
 
 		if (empty($problems)) {
@@ -801,7 +822,6 @@ END;
 	}
 
 
-
 	/**
 	 * Constructs a human-friendly message after one or more files weren't deleted for a particular form field.
 	 * @param $folder
@@ -824,6 +844,8 @@ END;
 			$indent = "&bull; ";
 		}
 
+		// -----------------
+
 		$missing_files = array();
 		$invalid_permissions = array();
 		$unknown_errors = array();
@@ -838,7 +860,6 @@ END;
 				$unknown_errors[] = $file;
 			}
 		}
-
 
 		$message = "";
 		if (!empty($missing_files)) {

@@ -18,29 +18,16 @@ $L["notify_file_not_deleted_invalid_permissions"] = "The <b>{\$filename}</b> fil
 $L["notify_files_not_deleted_invalid_permissions"] = "The following files could not be deleted because they don't have the appropriate permissions: <b>{\$file_list}</b>.";
 $L["notify_file_not_deleted_unknown_error"] = "The <b>{\$filename}</b> file in the <b>{\$folder}</b> folder could not be deleted due to an unknown error.";
 $L["notify_files_not_deleted_unknown_errors"] = "The following files could not be deleted due to unknown errors: <b>{\$file_list}</b>.";
-
-
+$L["word_help"] = "Help";
+$L["notify_clear_error"] = "<a href=\"#\" onclick=\"{\$js_link}\">Click here</a> to ignore this error message and just remove the reference from the database.";
+$L["notify_clear_errors"] = "<a href=\"#\" onclick=\"{\$js_link}\">Click here</a> to ignore these error messages and just remove the references from the database.";
+$L["notify_file_deleted_with_error"] = "<b>1</b> file was successfully deleted, but the following errors occurred";
+$L["notify_files_deleted_with_error"] = "<b>{\$num_files}</b> files were successfully deleted, but the following errors occurred";
+$L["notify_field_type_reset"] = "The field type has been reset.";
+$L["notify_submission_updated_file_problems"] = "Your submission was updated, but we encountered problems:";
+$L["notify_upload_invalid_file_extension"] = "The file being uploaded has an unsupported file extension.";
 $L["notify_file_not_deleted_missing"] = "The <b>{\$file}</b> file hasn't been deleted because it doesn't exist in the expected folder (<b>{\$folder}</b>).";
 $L["notify_files_not_deleted_missing"] = "The following files haven't been deleted because they doesn't exist in the expected folder (<b>{\$folder}</b>): <b>{\$file_list}</b>.";
 
-$L["notify_file_deleted_with_error"] = "<b>1</b> file was successfully deleted, but the following errors occurred";
-$L["notify_files_deleted_with_error"] = "<b>{\$num_files}</b> files were successfully deleted, but the following errors occurred";
-
-// looks incorrect...
-//$L["notify_file_not_deleted_permissions"] = "could not be deleted because it didn't have the appropriate permissions ({\$folder}).";
-
-
-
-$L["notify_file_not_deleted_unknown_error"] = "could not be deleted for an unknown reason ({\$folder}).";
-$L["notify_field_type_reset"] = "The field type has been reset.";
-
-$L["notify_clear_error"] = "<a href=\"#\" onclick=\"{\$js_link}\">Click here</a> to ignore this error message and just remove the reference from the database.";
-$L["notify_clear_errors"] = "<a href=\"#\" onclick=\"{\$js_link}\">Click here</a> to ignore these error messages and just remove the references from the database.";
-
-$L["notify_file_not_deleted_unknown_error"] = "There was an unknown error when trying to delete this file. <a href=\"#\" onclick=\"{\$js_link}\">Click here</a> to ignore this error message and just remove the reference from the database.";
-$L["notify_submission_updated_file_problems"] = "Your submission was updated, but we encountered problems:";
-$L["notify_upload_invalid_file_extension"] = "The file being uploaded has an unsupported file extension.";
 $L["notify_upload_invalid_file_extensions"] = "The following files have unsupported file extensions for their field: <b>{\$file_list}</b>";
 $L["notify_unable_to_copy_file_to_target_folder"] = "The following files could not be copied to the target folder from their temporary upload location: <b>{\$file_list}</b>";
-
-$L["word_help"] = "Help";

@@ -168,7 +168,7 @@ class Module extends FormToolsModule
 	public function deleteSubmissionsHook($params)
 	{
 		$L = $this->getLangStrings();
-		return Hooks::deleteSubmissionHook($params, $L);
+		return Hooks::deleteSubmissionsHook($params, $L);
 	}
 
 	public function getUploadedFilesHook($params)
