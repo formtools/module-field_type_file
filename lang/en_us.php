@@ -28,6 +28,15 @@ $L["notify_submission_updated_file_problems"] = "Your submission was updated, bu
 $L["notify_upload_invalid_file_extension"] = "The file being uploaded has an unsupported file extension.";
 $L["notify_file_not_deleted_missing"] = "The <b>{\$file}</b> file hasn't been deleted because it doesn't exist in the expected folder (<b>{\$folder}</b>).";
 $L["notify_files_not_deleted_missing"] = "The following files haven't been deleted because they doesn't exist in the expected folder (<b>{\$folder}</b>): <b>{\$file_list}</b>.";
-
 $L["notify_upload_invalid_file_extensions"] = "The following files have unsupported file extensions for their field: <b>{\$file_list}</b>";
 $L["notify_unable_to_copy_file_to_target_folder"] = "The following files could not be copied to the target folder from their temporary upload location: <b>{\$file_list}</b>";
+$L["notify_problems_deleting_file_intro"] = "We encountered the following problems deleting your file:";
+$L["notify_problems_deleting_files_intro"] = "We encountered the following problems deleting your files:";
+$L["notify_file_deleted_with_problems"] = "The file was deleted, but we encountered the following problems:";
+$L["notify_num_files_deleted_with_problems"] = "<b>{\$num_deleted}</b> files were deleted, but we encountered the following problems:";
+$L["notify_file_missing_from_folder"] = "The <b>{\$filename}</b> file was not found in the following folder: <b>{\$folder}</b>.";
+$L["notify_files_missing"] = "The following files were not found: <b>{\$file_list}</b>.";
+$L["notify_file_incorrect_permissions"] = "The <b>{\$filename}</b> file in the <b>{\$folder}</b> folder did not have the right file permissions.";
+$L["notify_files_incorrect_permissions"] = "The following files could not be removed due to file permissions: <b>{\$file_list}</b>.";
+$L["notify_file_unknown_reasons"] = "The <b>{\$filename}</b> file in the <b>{\$folder}</b> folder could not be removed for unknown reasons.";
+$L["notify_files_unknown_reasons"] = "The following files could not be removed due to unknown reasons: <b>{\$file_list}</b>.";

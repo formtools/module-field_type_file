@@ -246,8 +246,9 @@ END;
 	}
 
 	/**
-	 * Called whenever a submission or submissions are deleted. It's the hook for the ft_delete_submission_files
-	 * Core function.
+	 * Called whenever a submission or submissions are deleted. It's the hook for the Files::deleteSubmissionFiles()
+	 * Core method. This gets passed a list of files that need to be deleted: note, these files may or may not be
+	 * handled via this module; other modules may be defined for file uploads.
 	 *
 	 * @param $params
 	 * @param $L
@@ -262,40 +263,123 @@ END;
 		$file_permissions_errors = array();
 		$file_unknown_errors = array();
 
+		$field_settings_by_field_id = array();
+		$num_deleted = 0;
+
+		// $file_field_info is a hash with keys: submission_id, field_id, field_type_id, filename
 		foreach ($file_field_info as $info) {
 			if ($info["field_type_id"] != $module_field_type_id) {
 				continue;
 			}
 
 			$field_id = $info["field_id"];
-			$filename = $info["filename"];
-			$field_settings = Fields::getFieldSettings($field_id);
-			$folder = $field_settings["folder_path"];
 
-			if (!@unlink("$folder/$filename")) {
-				if (!is_file("$folder/$filename")) {
-					$file_missing_errors[] = $filename;
+			if (isset($field_settings_by_field_id[$field_id])) {
+				$field_settings = $field_settings_by_field_id[$field_id];
+			} else {
+				$field_settings = Fields::getFieldSettings($field_id);
+				$field_settings_by_field_id[$field_id] = $field_settings;
+			}
+
+			$folder = $field_settings["folder_path"];
+			$filenames = explode(":", $info["filename"]);
+
+			foreach ($filenames as $filename) {
+				$file = "$folder/$filename";
+				if (@unlink($file)) {
+					$num_deleted++;
 				} else {
-					if (is_file("$folder/$filename") && (!is_readable("$folder/$filename") || !is_writable("$folder/$filename"))) {
-						$file_permissions_errors[] = $filename;
+					if (!is_file($file)) {
+						$file_missing_errors[] = array(
+							"filename" => $filename,
+							"folder" => $folder
+						);
 					} else {
-						$file_unknown_errors[] = $filename;
+						if (!is_readable($file) || !is_writable($file)) {
+							$file_permissions_errors[] = array(
+								"filename" => $filename,
+								"folder" => $folder
+							);
+						} else {
+							$file_unknown_errors[] = array(
+								"filename" => $filename,
+								"folder" => $folder
+							);
+						}
 					}
 				}
 			}
 		}
 
-		// TODO
-		$problems = array();
 		if (!empty($file_missing_errors) || !empty($file_permissions_errors) || !empty($file_unknown_errors)) {
-			//"The file was deleted, but there were problems delete"
+			$num_errors = count(array_merge($file_missing_errors, $file_permissions_errors, $file_missing_errors));
+
+			$lines = array();
+			if ($num_deleted == 0) {
+				if ($num_errors == 1) {
+					$lines[] = $L["notify_problems_deleting_file_intro"];
+				} else {
+					$lines[] = $L["notify_problems_deleting_files_intro"];
+				}
+			} else if ($num_deleted == 1) {
+				$lines[] = $L["notify_file_deleted_with_problems"];
+			} else {
+				$lines[] = General::evalSmartyString($L["notify_num_files_deleted_with_problems"],
+					array("num_deleted" => $num_deleted));
+			}
+
+			if (!empty($file_missing_errors)) {
+				if (count($file_missing_errors) == 1) {
+					$lines[] = "&bull; " . General::evalSmartyString($L["notify_file_missing_from_folder"],
+						array(
+							"filename" => $file_missing_errors[0]["filename"],
+							"folder" =>  $file_missing_errors[0]["folder"]
+						)
+					);
+				} else {
+					$filenames = array_column($file_missing_errors, "filename");
+					$lines[] = "&bull; " . General::evalSmartyString($L["notify_files_missing"],
+						array("file_list" => implode('</b>, <b>', $filenames))
+					);
+				}
+			}
+
+			if (!empty($file_permissions_errors)) {
+				if (count($file_permissions_errors) == 1) {
+					$lines[] = "&bull; " . General::evalSmartyString($L["notify_file_incorrect_permissions"],
+						array(
+							"filename" => $file_permissions_errors[0]["filename"],
+							"folder" =>  $file_permissions_errors[0]["folder"]
+						)
+					);
+				} else {
+					$filenames = array_column($file_permissions_errors, "filename");
+					$lines[] = "&bull; " . General::evalSmartyString($L["notify_files_incorrect_permissions"],
+						array("file_list" => implode('</b>, <b>', $filenames))
+					);
+				}
+			}
+
+			if (!empty($file_unknown_errors)) {
+				if (count($file_unknown_errors) == 1) {
+					$lines[] = "&bull; " . General::evalSmartyString($L["notify_file_unknown_reasons"],
+						array(
+							"filename" => $file_unknown_errors[0]["filename"],
+							"folder" =>  $file_unknown_errors[0]["folder"]
+						)
+					);
+				} else {
+					$filenames = array_column($file_unknown_errors, "filename");
+					$lines[] = "&bull; " . General::evalSmartyString($L["notify_files_unknown_reasons"],
+						array("file_list" => implode('</b>, <b>', $filenames))
+					);
+				}
+			}
+
+			return array(false, implode("<br />", $lines));
 		}
 
-		if (empty($problems)) {
-			return array(true, "");
-		} else {
-			return array(false, $problems);
-		}
+		return array(true, "");
 	}
 
 
@@ -333,21 +417,28 @@ END;
 				continue;
 			}
 
+			$submissions = $db->fetchAll();
+
 			$field_settings = Fields::getFieldSettings($field_id);
-			foreach ($field_settings as $row) {
+			foreach ($submissions as $submission_info) {
+
 				// here, nothing's been uploaded in the field
-				if (empty($row[$col_name])) {
+				if (empty($submission_info[$col_name])) {
 					continue;
 				}
 
-				$data[] = array(
-					"submission_id" => $row["submission_id"],
-					"field_id" => $field_id,
-					"field_type_id" => $module_field_type_id,
-					"folder_path" => $field_settings["folder_path"],
-					"folder_url" => $field_settings["folder_url"],
-					"filename" => $row[$col_name]
-				);
+				$files = explode(":", $submission_info[$col_name]);
+
+				foreach ($files as $filename) {
+					$data[] = array(
+						"submission_id" => $submission_info["submission_id"],
+						"field_id" => $field_id,
+						"field_type_id" => $module_field_type_id,
+						"folder_path" => $field_settings["folder_path"],
+						"folder_url" => $field_settings["folder_url"],
+						"filename" => $filename
+					);
+				}
 			}
 		}
 
@@ -843,8 +934,6 @@ END;
 			}
 			$indent = "&bull; ";
 		}
-
-		// -----------------
 
 		$missing_files = array();
 		$invalid_permissions = array();
