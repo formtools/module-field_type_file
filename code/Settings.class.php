@@ -43,6 +43,10 @@ class Settings
 .cf_file_list_view {
 	list-style-type: none;
 	padding: 0;
+	margin: 0;
+}
+.cf_file_list_view.cf_file_list_horizontal li {
+	display: inline-block;
 }
 .cf_file.cf_file_has_items .cf_file_list {
 	display: block;
@@ -71,13 +75,23 @@ END;
 	{assign var=filenames value=[]}
 {else}
 	{assign var=filenames value=":"|explode:\$VALUE}
-{/if} 
-{foreach from=\$filenames item=filename}
-<li class="cf_file_list_view">
-	<a href="{\$folder_url}/{\$filename}" 
-		{if \$use_fancybox == "yes"}class="fancybox"{/if}>{\$filename}</a>
-</li>
-{/foreach}
+{/if}
+
+{if \$CONTEXTPAGE == 'submission_listing'}
+	{foreach from=\$filenames item=filename name=filelist}
+		<a href="{\$folder_url}/{\$filename}" 
+			{if \$use_fancybox == "yes"}class="fancybox"{/if}>{\$filename}</a>{if not \$smarty.foreach.filelist.last}, {/if}
+	{/foreach}
+{else}
+	<ul class="cf_file_list_view"> 
+		{foreach from=\$filenames item=filename}
+		<li>
+			<a href="{\$folder_url}/{\$filename}" 
+				{if \$use_fancybox == "yes"}class="fancybox"{/if}>{\$filename}</a>
+		</li>
+		{/foreach}
+	</ul>
+{/if}
 END;
 
 	private static $editFieldSmartyMarkup = <<< END

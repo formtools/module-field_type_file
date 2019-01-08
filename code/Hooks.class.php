@@ -273,7 +273,6 @@ END;
 			}
 
 			$field_id = $info["field_id"];
-
 			if (isset($field_settings_by_field_id[$field_id])) {
 				$field_settings = $field_settings_by_field_id[$field_id];
 			} else {
@@ -312,22 +311,7 @@ END;
 		}
 
 		if (!empty($file_missing_errors) || !empty($file_permissions_errors) || !empty($file_unknown_errors)) {
-			$num_errors = count(array_merge($file_missing_errors, $file_permissions_errors, $file_missing_errors));
-
 			$lines = array();
-			if ($num_deleted == 0) {
-				if ($num_errors == 1) {
-					$lines[] = $L["notify_problems_deleting_file_intro"];
-				} else {
-					$lines[] = $L["notify_problems_deleting_files_intro"];
-				}
-			} else if ($num_deleted == 1) {
-				$lines[] = $L["notify_file_deleted_with_problems"];
-			} else {
-				$lines[] = General::evalSmartyString($L["notify_num_files_deleted_with_problems"],
-					array("num_deleted" => $num_deleted));
-			}
-
 			if (!empty($file_missing_errors)) {
 				if (count($file_missing_errors) == 1) {
 					$lines[] = "&bull; " . General::evalSmartyString($L["notify_file_missing_from_folder"],
@@ -376,7 +360,10 @@ END;
 				}
 			}
 
-			return array(false, implode("<br />", $lines));
+			return array(
+				"success" => false,
+				"problems" => implode("<br />", $lines)
+			);
 		}
 
 		return array(true, "");
