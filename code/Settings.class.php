@@ -68,6 +68,9 @@ class Settings
 .cf_file.cf_file_has_items.cf_file_multiple .cf_file_row_cb {
 	display: inline-block;
 }
+.cf_file_num_files {
+	color: #444444;
+}
 END;
 
 	private static $viewFieldSmartyMarkup = <<< END
@@ -78,10 +81,15 @@ END;
 {/if}
 
 {if \$CONTEXTPAGE == 'submission_listing'}
+{if \$filenames|@count < 2}
 	{foreach from=\$filenames item=filename name=filelist}
 		<a href="{\$folder_url}/{\$filename}" 
 			{if \$use_fancybox == "yes"}class="fancybox"{/if}>{\$filename}</a>{if not \$smarty.foreach.filelist.last}, {/if}
 	{/foreach}
+{else}
+	<div class="cf_file_num_files"><b>{\$filenames|@count}</b> {\$LANG.word_files|lower}</div> 
+{/if}
+
 {else}
 	<ul class="cf_file_list_view"> 
 		{foreach from=\$filenames item=filename}
