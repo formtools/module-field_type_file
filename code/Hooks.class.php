@@ -81,8 +81,6 @@ END;
 	 */
 	public static function processFormSubmissionHook($params, $L)
 	{
-		$LANG = Core::$L;
-
 		$file_fields = $params["file_fields"];
 		if (empty($file_fields)) {
 			return array(true, "");
@@ -92,20 +90,13 @@ END;
 		$submission_id = $params["submission_id"];
 
 		$module_field_type_id = FieldTypes::getFieldTypeIdByIdentifier("file");
-		$problem_files = array();
 		$redirect_query_params = $params["redirect_query_params"];
 
-		$return_info = array(
-			"success" => true,
-			"message" => "",
-			"redirect_query_params" => $redirect_query_params
-		);
-
 		$num_uploaded_files = 0;
-		$all_successful = true;
 		$file_size_errors = array();
 		$file_extension_errors = array();
 		$file_rename_errors = array();
+		$all_successful = true;
 
 		foreach ($file_fields as $file_field_info) {
 			$field_id = $file_field_info["field_info"]["field_id"];
@@ -125,51 +116,33 @@ END;
 				continue;
 			}
 
+			// this updates the database for this field & returns errors
 			list ($success, $uploaded_files, $errors) = self::uploadSubmissionFile($form_id, $submission_id, $file_field_info, $L);
 			$num_uploaded_files += count($uploaded_files);
 
-			if (!$success) {
-				$all_successful = false;
-			}
 			if (!empty($errors["file_size_errors"])) {
 				$file_size_errors = array_merge($file_size_errors, $errors["file_size_errors"]);
+				$all_successful = false;
 			}
 			if (!empty($errors["file_extension_errors"])) {
 				$file_extension_errors = array_merge($errors["file_extension_errors"]);
+				$all_successful = false;
 			}
 			if (!empty($errors["file_rename_errors"])) {
 				$file_rename_errors[] = $errors["file_rename_errors"];
+				$all_successful = false;
 			}
 
-
-			if (empty($file_size_errors) && empty($file_extension_errors) && empty($file_rename_errors)) {
-				if ($include_on_redirect == "yes") {
-					$redirect_query_params[] = "$field_name=" . rawurlencode($filename);
-				}
+			if (!empty($uploaded_files) && $include_on_redirect == "yes") {
+				$redirect_query_params[] = "$field_name=" . rawurlencode(implode(":", $uploaded_files));
 			}
 		}
 
-//			if (!$success) {
-//				$problem_files[] = array($_FILES[$field_name]["name"], $message);
-//			} else {
-//			}
-
-		if (!empty($problem_files)) {
-			$message = $LANG["notify_submission_updated_file_problems"] . "<br /><br />";
-			foreach ($problem_files as $problem) {
-				$message .= "&bull; <b>{$problem[0]}</b>: $problem[1]<br />\n";
-			}
-
-			$return_info = array(
-				"success" => false,
-				"message" => $message,
-				"redirect_query_params" => $redirect_query_params
-			);
-		} else {
-			$return_info["redirect_query_params"] = $redirect_query_params;
-		}
-
-		return $return_info;
+		return array(
+			"success" => $all_successful,
+			"message" => self::getFileUploadErrorMsg($file_size_errors, $file_extension_errors, $file_rename_errors, $L),
+			"redirect_query_params" => $redirect_query_params
+		);
 	}
 
 
@@ -490,40 +463,7 @@ END;
 			}
 		}
 
-		$lines = array();
-		if (!empty($file_size_errors) || !empty($file_extension_errors) || !empty($file_rename_errors)) {
-			$lines[] = $L["notify_submission_updated_file_problems"];
-
-			if (count($file_size_errors) == 1) {
-				$lines[] = "&bull; " . General::evalSmartyString($L["notify_file_too_large"], array(
-					"filename" => $file_size_errors[0]["filename"],
-					"file_size" => $file_size_errors[0]["actual_size"],
-					"max_file_size" => $file_size_errors[0]["max_file_size"]
-				));
-			} else if (count($file_size_errors) > 1) {
-				$filenames = array();
-				foreach ($file_size_errors as $row) {
-					$filenames[] = $row["filename"];
-				}
-				$lines[] = "&bull; " . General::evalSmartyString($L["notify_files_too_large"], array(
-					"file_list" => implode("</b>, <b>", $filenames)
-				));
-			}
-
-			if (count($file_extension_errors) == 1) {
-				$lines[] = "&bull; {$L["notify_upload_invalid_file_extension"]}";
-			} else if (count($file_extension_errors) > 1) {
-				$lines[] = "&bull; " . General::evalSmartyString($L["notify_upload_invalid_file_extensions"], array(
-					"file_list" => implode("</b>, <b>", $file_extension_errors)
-				));
-			}
-
-			if (count($file_rename_errors) > 0) {
-				$lines[] = "&bull; " . General::evalSmartyString($L["notify_unable_to_copy_file_to_target_folder"], array(
-					"file_list" => implode("</b>, <b>", $file_rename_errors)
-				));
-			}
-		}
+		$msg = self::getErrorMsgFromUploadFileErrors($file_size_errors, $file_extension_errors, $file_rename_errors);
 
 		$return_info = array(
 			"success" => $all_successful
@@ -985,6 +925,48 @@ END;
 		$lines[] = $message . " " . General::evalSmartyString($lang_str, array(
 			"js_link" => "return files_ns.delete_submission_files($field_id, [$files_str], true)",
 		));
+
+		return implode("<br />", $lines);
+	}
+
+
+	private static function getFileUploadErrorMsg ($file_size_errors, $file_extension_errors, $file_rename_errors, $L)
+	{
+		$lines = array();
+
+		if (!empty($file_size_errors) || !empty($file_extension_errors) || !empty($file_rename_errors)) {
+			$lines[] = $L["notify_submission_updated_file_problems"];
+
+			if (count($file_size_errors) == 1) {
+				$lines[] = "&bull; " . General::evalSmartyString($L["notify_file_too_large"], array(
+					"filename" => $file_size_errors[0]["filename"],
+					"file_size" => $file_size_errors[0]["actual_size"],
+					"max_file_size" => $file_size_errors[0]["max_file_size"]
+				));
+			} else if (count($file_size_errors) > 1) {
+				$filenames = array();
+				foreach ($file_size_errors as $row) {
+					$filenames[] = $row["filename"];
+				}
+				$lines[] = "&bull; " . General::evalSmartyString($L["notify_files_too_large"], array(
+					"file_list" => implode("</b>, <b>", $filenames)
+				));
+			}
+
+			if (count($file_extension_errors) == 1) {
+				$lines[] = "&bull; {$L["notify_upload_invalid_file_extension"]}";
+			} else if (count($file_extension_errors) > 1) {
+				$lines[] = "&bull; " . General::evalSmartyString($L["notify_upload_invalid_file_extensions"], array(
+					"file_list" => implode("</b>, <b>", $file_extension_errors)
+				));
+			}
+
+			if (count($file_rename_errors) > 0) {
+				$lines[] = "&bull; " . General::evalSmartyString($L["notify_unable_to_copy_file_to_target_folder"], array(
+					"file_list" => implode("</b>, <b>", $file_rename_errors)
+				));
+			}
+		}
 
 		return implode("<br />", $lines);
 	}
