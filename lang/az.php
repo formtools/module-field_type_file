@@ -36,5 +36,5 @@ $L["phrase_reset_field_type"] = "Alan Türünü Sıfırla";
 $L["phrase_no_files_to_delete"] = "Silmək üçün fayl yoxdur.";
 $L["text_help"] = "Bu modul haqqında daha ətraflı məlumat üçün Forma Tools saytına <a href=\"https://modules.formtools.org/field_type_tinymce/\" target=\"_blank\">yardım sənədlərinə</a> baxın.";
 $L["text_reset_field_type_desc"] = "Aşağıdakı bu düyməyə bu sahədə növünü ən son zavod parametrlərinə bərpa etməyə imkan verir. Ümumiyyətlə bunu etməniz lazım deyil, lakin uğursuz bir yükseltme halında bu, bu gündəmə gətirilməsini təmin etmək üçün uğursuz bir yoludur.";
-$L["text_intro_desc"] = "<a href=\"{\$link}\">Ayarlar &raquo; Faylları</a> yükləyin. Formatı düzəldərək hər hansı bir formanı düzəldərək bu parametrləri əvəz edə bilərsiniz & raquo; Alanlar sekmesi.";
+$L["text_intro_desc"] = "<a href=\"{\$link}\">Ayarlar &raquo; Faylları</a> yükləyin. Formatı düzəldərək hər hansı bir formanı düzəldərək bu parametrləri əvəz edə bilərsiniz &raquo; Alanlar sekmesi.";
 $L["word_help"] = "Kömək edin";

@@ -1,15 +1,15 @@
 <?php
 
 $L = array();
-$L["module_name"] = "File Upload";
+$L["module_name"] = "Datei-Upload";
 
-$L["confirm_delete_submission_files"] = "Are you sure you want to delete these files?";
-$L["module_description"] = "This module provides a simple file upload field for use in your Form Tools fields.";
-$L["notify_file_deleted"] = "The file has been deleted.";
-$L["notify_file_too_large"] = "The <b>{\$filename}</b> file is too large. The file was {\$file_size}KB, but the maximum permitted file upload size is {\$max_file_size}KB.";
-$L["notify_files_deleted"] = "The files have been deleted.";
-$L["notify_files_too_large"] = "The following files are too large: <b>{\$file_list}</b>";
-$L["notify_submission_no_field_id"] = "This submission's field ID was not found.";
+$L["confirm_delete_submission_files"] = "Möchten Sie diese Dateien wirklich löschen?";
+$L["module_description"] = "Dieses Modul stellt ein einfaches Feld zum Hochladen von Dateien zur Verwendung in den Feldern der Formulartools bereit.";
+$L["notify_file_deleted"] = "Die Datei wurde gelöscht.";
+$L["notify_file_too_large"] = "Die Datei <b>{\$filename}</b> ist zu groß. Die Datei war {\$file_size} KB, aber die maximal zulässige Dateigröße beträgt {\$max_file_size} KB.";
+$L["notify_files_deleted"] = "Die Dateien wurden gelöscht.";
+$L["notify_files_too_large"] = "Die folgenden Dateien sind zu groß: <b>{\$file_list}</b>";
+$L["notify_submission_no_field_id"] = "Die Feld-ID dieses Beitrags wurde nicht gefunden.";
 $L["notify_file_not_deleted_invalid_permissions"] = "The <b>{\$filename}</b> file in the <b>{\$folder}</b> folder could not be deleted because it didn't have the appropriate permissions.";
 $L["notify_files_not_deleted_invalid_permissions"] = "The following files could not be deleted because they don't have the appropriate permissions: <b>{\$file_list}</b>.";
 $L["notify_file_not_deleted_unknown_error"] = "The <b>{\$filename}</b> file in the <b>{\$folder}</b> folder could not be deleted due to an unknown error.";
