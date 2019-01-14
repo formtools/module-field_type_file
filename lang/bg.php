@@ -1,24 +1,40 @@
 <?php
 
 $L = array();
-$L["module_name"] = "File Upload";
-$L["module_description"] = "This module provides a simple file upload field for use in your Form Tools fields.";
+$L["module_name"] = "Качване на файл";
 
-$L["word_help"] = "Help";
-
-$L["phrase_reset_field_type"] = "Reset Field Type";
-
-$L["text_help"] = "For more information on this module, please see the <a href=\"http://modules.formtools.org/field_type_tinymce/\" target=\"_blank\">help documentation</a> on the Form Tools site.";
-$L["text_reset_field_type_desc"] = "This button below lets you reset this field type to the latest factory defaults. Generally you don't have to do this, but in case of a failed upgrade this is a failsafe way to ensure it's up to date.";
-$L["text_intro_desc"] = "Use the <a href=\"{\$link}\">Settings &raquo; Files</a> page to define the default file upload settings. You can override those settings by editing any form field via the Edit Form &raquo; Fields tab.";
-
-$L["notify_file_not_deleted_no_exist"] = "could not be deleted because it was not found at the location specified ({\$folder}).";
-$L["notify_file_not_deleted_permissions"] = "could not be deleted because it didn't have the appropriate permissions ({\$folder}).";
-$L["notify_file_not_deleted_unknown_error"] = "could not be deleted bfor an unknown reason ({\$folder}).";
-$L["notify_field_type_reset"] = "The field type has been reset.";
-
-$L["notify_file_deleted"] = "The file has been deleted.";
-$L["notify_file_not_deleted_no_exist"] = "The file has not been deleted because it doesn't exist at the location expected. <a href=\"#\" onclick=\"{\$js_link}\">Click here</a> to ignore this error message and just remove the reference from the database.";
-$L["notify_file_not_deleted_permissions"] = "The file has not been deleted because it has the wrong permissions. <a href=\"#\" onclick=\"{\$js_link}\">Click here</a> to ignore this error message and just remove the reference from the database.";
-$L["notify_file_not_deleted_unknown_error"] = "There was an unknown error when trying to delete this file. <a href=\"#\" onclick=\"{\$js_link}\">Click here</a> to ignore this error message and just remove the reference from the database.";
-$L["notify_file_too_large"] = "This file is too large. The file was {\$FILESIZE}KB, but the maximum permitted file upload size is {\$MAXFILESIZE}KB.";
+$L["confirm_delete_submission_files"] = "Наистина ли искате да изтриете тези файлове?";
+$L["module_description"] = "Този модул осигурява просто поле за качване на файлове за използване във вашите полета за инструменти.";
+$L["notify_file_deleted"] = "Файлът е изтрит.";
+$L["notify_file_too_large"] = "Файлът <b>{\$filename}</b> е твърде голям. Файлът е {\$file_size} KB, но максималният размер на качване на файла е {\$max_file_size} KB.";
+$L["notify_files_deleted"] = "Файловете са изтрити.";
+$L["notify_files_too_large"] = "Следните файлове са твърде големи: <b>{\$file_list}</b>";
+$L["notify_submission_no_field_id"] = "ID на полето за това подаване не бе намерено.";
+$L["notify_file_not_deleted_invalid_permissions"] = "Файлът <b>{\$filename}</b> в папката <b>{\$folder}</b> не можа да бъде изтрит, защото нямаше съответните права.";
+$L["notify_files_not_deleted_invalid_permissions"] = "Следните файлове не могат да бъдат изтрити, защото нямат съответните разрешения: <b>{\$file_list}</b>.";
+$L["notify_file_not_deleted_unknown_error"] = "Файлът <b>{\$filename}</b> в папката <b>{\$folder}</b> не може да бъде изтрит поради неизвестна грешка.";
+$L["notify_files_not_deleted_unknown_errors"] = "Следните файлове не можаха да бъдат изтрити поради неизвестни грешки: <b>{\$file_list}</b>.";
+$L["notify_clear_error"] = "<a href=\"#\" onclick=\"{\$js_link}\">Кликнете тук</a>, за да игнорирате това съобщение за грешка и просто премахнете препратката от базата данни.";
+$L["notify_clear_errors"] = "<a href=\"#\" onclick=\"{\$js_link}\"> Кликнете тук </a>, за да игнорирате тези съобщения за грешки и просто премахнете препратките от базата данни.";
+$L["notify_file_deleted_with_error"] = "Файлът <b>1</b> бе успешно изтрит, но възникнаха следните грешки";
+$L["notify_files_deleted_with_error"] = "Файловете с <b>{\$num_files}</b> бяха успешно изтрити, но възникнаха следните грешки";
+$L["notify_field_type_reset"] = "Типът на полето е нулиран.";
+$L["notify_submission_updated_file_problems"] = "Подаването ви бе актуализирано, но възникнаха проблеми:";
+$L["notify_upload_invalid_file_extension"] = "Файлът, който се качва, има неподдържано файлово разширение.";
+$L["notify_file_not_deleted_missing"] = "Файлът <b>{\$file}</b> не е изтрит, защото не съществува в очакваната папка (<b>{\$folder}</b>)";
+$L["notify_files_not_deleted_missing"] = "Следните файлове не са изтрити, защото не съществуват в очакваната папка (<b>{\$folder}</b>): <b>{\$file_list}</b>";
+$L["notify_upload_invalid_file_extensions"] = "Следните файлове имат неподдържани файлови разширения за тяхното поле: <b>{\$file_list}</b>";
+$L["notify_unable_to_copy_file_to_target_folder"] = "Следните файлове не могат да бъдат копирани в целевата папка от временното им място за качване: <b>{\$file_list}</b>";
+$L["notify_num_files_deleted_with_problems"] = "Файловете <b>{\$num_deleted}</b> бяха изтрити, но срещнахме следните проблеми:";
+$L["notify_file_missing_from_folder"] = "Файлът <b>{\$filename}</b> не бе намерен в папката: <b>{\$folder}</b>";
+$L["notify_files_missing"] = "Тези файлове не бяха намерени: <b>{\$file_list}</b>.";
+$L["notify_file_incorrect_permissions"] = "Файлът <b>{\$filename}</b> в папката <b>{\$folder}</b> нямаше необходимите разрешения за файлове.";
+$L["notify_files_incorrect_permissions"] = "Тези файлове не можаха да бъдат премахнати поради разрешения за файлове: <b>{\$file_list}</b>";
+$L["notify_file_unknown_reasons"] = "Файлът <b>{\$filename}</b> в папката <b> {\$folder} </b> не може да бъде премахнат по неизвестни причини.";
+$L["notify_files_unknown_reasons"] = "Тези файлове не можаха да бъдат премахнати поради неизвестни причини: <b>{\$file_list}</b>";
+$L["phrase_reset_field_type"] = "Нулиране на вида на полето";
+$L["phrase_no_files_to_delete"] = "Няма файлове за изтриване.";
+$L["text_help"] = "За повече информация относно този модул, моля, вижте <a href=\"https://modules.formtools.org/field_type_tinymce/\" target=\"_blank\">помощната документация</a> на сайта на инструментите за формуляри.";
+$L["text_reset_field_type_desc"] = "Този бутон по-долу ви позволява да възстановите този тип поле до най-новите фабрични настройки. Обикновено не е нужно да правите това, но в случай на неуспешно обновяване, това е безопасен начин да се гарантира, че е актуален.";
+$L["text_intro_desc"] = "Използвайте <a href=\"{\$link}\">Настройки & raquo; Страници</a>, за да определите настройките за качване на файлове по подразбиране. Можете да замените тези настройки, като редактирате всяко поле за формуляр чрез Редактиране на формуляра & raquo; Раздел Полета.";
+$L["word_help"] = "Помогне";

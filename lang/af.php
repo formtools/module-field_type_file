@@ -1,24 +1,40 @@
 <?php
 
 $L = array();
-$L["module_name"] = "File Upload";
-$L["module_description"] = "This module provides a simple file upload field for use in your Form Tools fields.";
+$L["module_name"] = "Lêeroplaai";
 
+$L["confirm_delete_submission_files"] = "Is jy seker jy wil hierdie lêers uitvee?";
+$L["module_description"] = "Hierdie module bied u0026 # 39; n eenvoudige lêer upload veld vir gebruik in jou vorm gereedskap velde.";
+$L["notify_file_deleted"] = "Die lêer is verwyder.";
+$L["notify_file_too_large"] = "Die lêer <b>{\$filename}</b> is te groot. Die lêer was {\$file_size} KB, maar die maksimum toegelate lêeroplaaigrootte is {\$max_file_size} KB.";
+$L["notify_files_deleted"] = "Die lêers is verwyder.";
+$L["notify_files_too_large"] = "Die volgende lêers is te groot: <b>{\$file_list}</b>";
+$L["notify_submission_no_field_id"] = "Hierdie voorlegging se veld ID is nie gevind nie.";
+$L["notify_file_not_deleted_invalid_permissions"] = "Die lêer <b>{\$lêernaam}</b> in die gids <b>{\$folder}</b> kan nie verwyder word nie omdat dit nie die regte regte het nie.";
+$L["notify_files_not_deleted_invalid_permissions"] = "Die volgende lêers kon nie uitgevee word nie omdat hulle nie die regte regte het nie: <b>{\$file_list}</b>.";
+$L["notify_file_not_deleted_unknown_error"] = "Die lêer <b>{\$lêernaam}</b> in die gids <b>{\$folder}</b> kan nie verwyder word nie weens 'n onbekende fout.";
+$L["notify_files_not_deleted_unknown_errors"] = "Die volgende lêers kon nie verwyder word weens onbekende foute: <b>{\$file_list}</b>.";
+$L["notify_clear_error"] = "<a href=\"#\" onclick=\"{\$js_link}\">Klik hier</a> om hierdie foutboodskap te ignoreer en verwyder die verwysing uit die databasis.";
+$L["notify_clear_errors"] = "<a href=\"#\" onclick=\"{\$js_link}\">Klik hier</a> om hierdie foutboodskappe te ignoreer en verwyder die verwysings uit die databasis.";
+$L["notify_file_deleted_with_error"] = "<b>1</b> lêer is suksesvol verwyder, maar die volgende foute het voorgekom";
+$L["notify_files_deleted_with_error"] = "<b>{\$num_files}</b> lêers is suksesvol verwyder, maar die volgende foute het voorgekom";
+$L["notify_field_type_reset"] = "Die veldtipe is herstel.";
+$L["notify_submission_updated_file_problems"] = "Jou voorlegging is opgedateer, maar ons het probleme ondervind:";
+$L["notify_upload_invalid_file_extension"] = "Die lêer wat opgelaai word, het 'n nie-ondersteunde lêeruitbreiding.";
+$L["notify_file_not_deleted_missing"] = "Die lêer <b>{\$file}</b> is nie verwyder nie omdat dit nie in die verwagte gids bestaan nie (<b>{\$folder}</b>)";
+$L["notify_files_not_deleted_missing"] = "Die volgende lêers is nie verwyder nie omdat dit nie in die verwagte vouer bestaan nie (<b>{\$folder}</b>): <b>{\$file_list}</b>";
+$L["notify_upload_invalid_file_extensions"] = "Die volgende lêers het nie-ondersteunde lêeruitbreidings vir hul veld: <b>{\$file_list}</b>";
+$L["notify_unable_to_copy_file_to_target_folder"] = "Die volgende lêers kon nie na die doelmap gekopieer word vanaf hul tydelike oplaaiplek nie: <b>{\$file_list}</b>";
+$L["notify_num_files_deleted_with_problems"] = "<b>{\$num_deleted}</b> lêers is verwyder, maar ons het die volgende probleme ondervind:";
+$L["notify_file_missing_from_folder"] = "Die lêer <b>{\$filename}</b> is nie in die gids gevind nie: <b>{\$folder}</b>";
+$L["notify_files_missing"] = "Hierdie lêers is nie gevind nie: <b>{\$file_list}</b>.";
+$L["notify_file_incorrect_permissions"] = "Die lêer <b>{\$filename}</b> in die gids <b>{\$folder}</b> het nie die regte lêerpermitte nie.";
+$L["notify_files_incorrect_permissions"] = "Hierdie lêers kon nie verwyder word nie as gevolg van lêertoestemmings: <b>{\$file_list}</b>";
+$L["notify_file_unknown_reasons"] = "Die lêer <b>{\$filename}</b> in die gids <b>{\$folder}</b> kan nie vir onbekende redes verwyder word nie.";
+$L["notify_files_unknown_reasons"] = "Hierdie lêers kon nie verwyder word weens onbekende redes: <b>{\$file_list}</b>";
+$L["phrase_reset_field_type"] = "Stel veldtipe terug";
+$L["phrase_no_files_to_delete"] = "Geen lêers om te verwyder nie.";
+$L["text_help"] = "Vir meer inligting oor hierdie module, raadpleeg die <a href=\"https://modules.formtools.org/field_type_tinymce/\" target=\"_blank\">hulpdokumentasie</a> op die webwerf Formularium gereedskap.";
+$L["text_reset_field_type_desc"] = "Met hierdie knoppie hieronder kan u hierdie veldtipe terugstel na die nuutste fabrieksinstellings. Oor die algemeen hoef jy dit nie te doen nie, maar in die geval van 'n mislukte opgradering, is dit 'n foutiewe manier om te verseker dat dit op datum is.";
+$L["text_intro_desc"] = "Gebruik die <a href=\"{\$link}\">Instellings &raquo; Lêers</a> om die standaard lêeroplaaierinstellings te definieer. U kan daardie instellings ignoreer deur enige vormsveld te redigeer via die vorm Wysig &raquo; Velds oortjie.";
 $L["word_help"] = "Help";
-
-$L["phrase_reset_field_type"] = "Reset Field Type";
-
-$L["text_help"] = "For more information on this module, please see the <a href=\"http://modules.formtools.org/field_type_tinymce/\" target=\"_blank\">help documentation</a> on the Form Tools site.";
-$L["text_reset_field_type_desc"] = "This button below lets you reset this field type to the latest factory defaults. Generally you don't have to do this, but in case of a failed upgrade this is a failsafe way to ensure it's up to date.";
-$L["text_intro_desc"] = "Use the <a href=\"{\$link}\">Settings &raquo; Files</a> page to define the default file upload settings. You can override those settings by editing any form field via the Edit Form &raquo; Fields tab.";
-
-$L["notify_file_not_deleted_no_exist"] = "could not be deleted because it was not found at the location specified ({\$folder}).";
-$L["notify_file_not_deleted_permissions"] = "could not be deleted because it didn't have the appropriate permissions ({\$folder}).";
-$L["notify_file_not_deleted_unknown_error"] = "could not be deleted bfor an unknown reason ({\$folder}).";
-$L["notify_field_type_reset"] = "The field type has been reset.";
-
-$L["notify_file_deleted"] = "The file has been deleted.";
-$L["notify_file_not_deleted_no_exist"] = "The file has not been deleted because it doesn't exist at the location expected. <a href=\"#\" onclick=\"{\$js_link}\">Click here</a> to ignore this error message and just remove the reference from the database.";
-$L["notify_file_not_deleted_permissions"] = "The file has not been deleted because it has the wrong permissions. <a href=\"#\" onclick=\"{\$js_link}\">Click here</a> to ignore this error message and just remove the reference from the database.";
-$L["notify_file_not_deleted_unknown_error"] = "There was an unknown error when trying to delete this file. <a href=\"#\" onclick=\"{\$js_link}\">Click here</a> to ignore this error message and just remove the reference from the database.";
-$L["notify_file_too_large"] = "This file is too large. The file was {\$FILESIZE}KB, but the maximum permitted file upload size is {\$MAXFILESIZE}KB.";
