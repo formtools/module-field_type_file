@@ -39,7 +39,9 @@ $(function () {
 
 		$(this).bind("click", function () {
 			var files = [];
-			if (is_multiple) {
+			var num_files = group.find(".cf_file_row_cb").length;
+
+			if (is_multiple || num_files > 1) {
 				group.find(".cf_file_row_cb:checked").each(function () {
 					files.push($(this).val());
 				});

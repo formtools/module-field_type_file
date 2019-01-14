@@ -31,7 +31,11 @@ $(function () {
 
 		$(this).bind("click", function () {
 			var files = [];
-			if (is_multiple) {
+			var num_files = group.find(".cf_file_row_cb").length;
+
+			// users may downgrade a multiple file upload field to a single one, leaving file fields with multiple
+			// files still in them. In that case we allow deleting new files, but not adding any more
+			if (is_multiple || num_files > 1) {
 				group.find(".cf_file_row_cb:checked").each(function () {
 					files.push($(this).val());
 				});

@@ -129,28 +129,24 @@ class Module extends FormToolsModule
 
 	// hooks
 
-	// DONE
 	public function updateSubmissionHook($params)
 	{
 		$L = $this->getLangStrings();
 		return Hooks::updateSubmissionHook($params, $L);
 	}
 
-	// DONE
 	public function deleteFilesFromField($form_id, $submission_id, $field_id, $files, $force_delete = false)
 	{
 		$L = $this->getLangStrings();
 		return Hooks::deleteFilesFromField($form_id, $submission_id, $field_id, $files, $force_delete, $L);
 	}
 
-	// DONE
 	public function includeJs($template, $page_data)
 	{
 		$L = $this->getLangStrings();
 		Hooks::includeJs($page_data["page"], $L);
 	}
 
-	// DONE
 	public function includeStandaloneJs()
 	{
 		$L = $this->getLangStrings();
@@ -169,14 +165,12 @@ class Module extends FormToolsModule
 		return Hooks::apiProcessFormSubmissionHook($params, $L);
 	}
 
-	// DONE
 	public function deleteSubmissionsHook($params)
 	{
 		$L = $this->getLangStrings();
 		return Hooks::deleteSubmissionsHook($params, $L);
 	}
 
-	// DONE
 	public function getUploadedFilesHook($params)
 	{
 		return Hooks::getUploadedFilesHook($params);

@@ -55,7 +55,8 @@ class Settings
 	border-bottom: 1px solid #dddddd;
 	display: none;
 }
-.cf_file.cf_file_has_items.cf_file_multiple .cf_file_top_row {
+.cf_file.cf_file_has_items.cf_file_multiple .cf_file_top_row,
+.cf_file.cf_file_has_multiple_items .cf_file_top_row {
 	display: block;
 }
 .cf_file_col {
@@ -65,7 +66,8 @@ class Settings
 .cf_file_row_cb {
 	display: none;
 }
-.cf_file.cf_file_has_items.cf_file_multiple .cf_file_row_cb {
+.cf_file.cf_file_has_items.cf_file_multiple .cf_file_row_cb,
+.cf_file.cf_file_has_multiple_items .cf_file_row_cb {
 	display: inline-block;
 }
 .cf_file_num_files {
@@ -110,7 +112,7 @@ END;
 {/if} 
 {assign var=num_files value=\$filenames|@count}
 
-<div class="cf_file {if \$num_files > 0}cf_file_has_items{/if} {if \$multiple_files == 'yes'}cf_file_multiple{/if}"
+<div class="cf_file {if \$num_files > 0}cf_file_has_items{/if} {if \$num_files > 1}cf_file_has_multiple_items{/if} {if \$multiple_files == 'yes'}cf_file_multiple{/if}"
 	id="cf_file_{\$FIELD_ID}">
     <input type="hidden" class="cf_file_field_id" value="{\$FIELD_ID}" />
 
@@ -132,7 +134,7 @@ END;
 	</ul>
 
 	<input type="button" value="{\$LANG.word_delete}" class="cf_file_delete_selected"
-		disabled="disabled" {if empty(\$VALUE) || \$multiple_files == 'no'}style="display: none"{/if} />
+		disabled="disabled" {if empty(\$VALUE) || (\$multiple_files == 'no' && \$num_files < 2)}style="display: none"{/if} />
 
 	<input type="file" class="cf_file_upload_btn" name="{\$NAME}{if \$multiple_files == "yes"}[]{/if}"
 		{if \$multiple_files == "yes"}multiple="multiple"{/if}

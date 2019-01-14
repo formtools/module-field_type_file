@@ -33,7 +33,7 @@ class Hooks
 			return;
 		}
 		echo <<<END
-<script src="$root_url/modules/field_type_file/scripts/edit_submission.js"></script>
+<script src="$root_url/modules/field_type_file/scripts/edit_submission.js?v=210"></script>
 <script>
 if (typeof g.messages == 'undefined') {
 	g.messages = {};
@@ -59,7 +59,7 @@ END;
 
 		// this includes the necessary JS for the file upload field type
 		echo <<< END
-  <script src="$root_url/modules/field_type_file/scripts/standalone.js"></script>
+  <script src="$root_url/modules/field_type_file/scripts/standalone.js?v=210"></script>
   <script>
   if (typeof g.messages == 'undefined')
     g.messages = {};
@@ -441,7 +441,7 @@ END;
 				continue;
 			}
 
-			// nothing was included in this field, just ignore it - TODO
+			// nothing was included in this field, just ignore it
 			if (empty($_FILES[$field_name]["name"])) {
 				continue;
 			}
@@ -463,14 +463,12 @@ END;
 			}
 		}
 
-		$msg = self::getErrorMsgFromUploadFileErrors($file_size_errors, $file_extension_errors, $file_rename_errors);
-
 		$return_info = array(
 			"success" => $all_successful
 		);
 
-		if (!empty($lines)) {
-			$return_info["message"] = implode("<br />", $lines);
+		if (!empty($file_size_errors) || !empty($file_extension_errors) || !empty($file_rename_errors)) {
+			$return_info["message"] = self::getErrorMsgFromUploadFileErrors($file_size_errors, $file_extension_errors, $file_rename_errors, $L);
 		}
 
 		return $return_info;
@@ -761,14 +759,20 @@ END;
 		// clean up the filename according to the whitelist chars
 		$file_data = array();
 		if ($is_multiple_files == "no") {
-			if (!empty($file_info["name"])) {
+
+			// the is_array checks the user didn't accidentally configure the field as a multiple file upload
+			if (!empty($file_info["name"]) && !is_array($file_info["name"])) {
 				$file_data[] = self::getSingleUploadedFileData($file_info["name"], $file_info["size"], $file_info["tmp_name"]);
 			}
 		} else {
-			$num_files = count($files[$field_name]["name"]);
-			for ($i = 0; $i < $num_files; $i++) {
-				if (!empty($file_info["name"][$i])) {
-					$file_data[] = self::getSingleUploadedFileData($file_info["name"][$i], $file_info["size"][$i], $file_info["tmp_name"][$i]);
+			// similarly, this checks the user didn't misconfigure the form as a single file upload but set it to "multiple"
+			// in the field configuration
+			if (is_array($files[$field_name]["name"])) {
+				$num_files = count($files[$field_name]["name"]);
+				for ($i = 0; $i < $num_files; $i++) {
+					if (!empty($file_info["name"][$i])) {
+						$file_data[] = self::getSingleUploadedFileData($file_info["name"][$i], $file_info["size"][$i], $file_info["tmp_name"][$i]);
+					}
 				}
 			}
 		}
@@ -930,7 +934,7 @@ END;
 	}
 
 
-	private static function getFileUploadErrorMsg ($file_size_errors, $file_extension_errors, $file_rename_errors, $L)
+	private static function getErrorMsgFromUploadFileErrors ($file_size_errors, $file_extension_errors, $file_rename_errors, $L)
 	{
 		$lines = array();
 
