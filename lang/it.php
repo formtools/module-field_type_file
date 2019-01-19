@@ -1,20 +1,20 @@
 <?php
 
 $L = array();
-$L["module_name"] = "File Upload";
+$L["module_name"] = "Upload di file";
 
-$L["confirm_delete_submission_files"] = "Are you sure you want to delete these files?";
-$L["module_description"] = "This module provides a simple file upload field for use in your Form Tools fields.";
-$L["notify_file_deleted"] = "The file has been deleted.";
-$L["notify_file_too_large"] = "The <b>{\$filename}</b> file is too large. The file was {\$file_size}KB, but the maximum permitted file upload size is {\$max_file_size}KB.";
-$L["notify_files_deleted"] = "The files have been deleted.";
-$L["notify_files_too_large"] = "The following files are too large: <b>{\$file_list}</b>";
-$L["notify_submission_no_field_id"] = "This submission's field ID was not found.";
-$L["notify_file_not_deleted_invalid_permissions"] = "The <b>{\$filename}</b> file in the <b>{\$folder}</b> folder could not be deleted because it didn't have the appropriate permissions.";
-$L["notify_files_not_deleted_invalid_permissions"] = "The following files could not be deleted because they don't have the appropriate permissions: <b>{\$file_list}</b>.";
-$L["notify_file_not_deleted_unknown_error"] = "The <b>{\$filename}</b> file in the <b>{\$folder}</b> folder could not be deleted due to an unknown error.";
+$L["confirm_delete_submission_files"] = "Sei sicuro di voler eliminare questi file?";
+$L["module_description"] = "Questo modulo fornisce un campo di caricamento file semplice da utilizzare nei campi Strumenti modulo.";
+$L["notify_file_deleted"] = "Il file è stato cancellato";
+$L["notify_file_too_large"] = "Il file <b>{\$filename}</b> è troppo grande. Il file era {\$file_size} KB, ma la dimensione massima consentita per il caricamento del file è {\$max_file_size} KB.";
+$L["notify_files_deleted"] = "I file sono stati cancellati.";
+$L["notify_files_too_large"] = "I seguenti file sono troppo grandi: <b>{\$file_list}</b>";
+$L["notify_submission_no_field_id"] = "L'ID campo di questa submission non è stato trovato.";
+$L["notify_file_not_deleted_invalid_permissions"] = "Il file <b>{\$filename}</b> nella cartella <b>{\$folder}</b> non può essere eliminato perché non disponeva delle autorizzazioni appropriate.";
+$L["notify_files_not_deleted_invalid_permissions"] = "Non è stato possibile eliminare i seguenti file perché non dispongono delle autorizzazioni appropriate: <b>{\$file_list}</b>.";
+$L["notify_file_not_deleted_unknown_error"] = "Il file <b>{\$filename}</b> nella cartella <b>{\$folder}</b> non può essere eliminato a causa di un errore sconosciuto.";
 $L["notify_files_not_deleted_unknown_errors"] = "The following files could not be deleted due to unknown errors: <b>{\$file_list}</b>.";
-$L["notify_clear_error"] = "<a href=\"#\" onclick=\"{\$js_link}\">Click here</a> to ignore this error message and just remove the reference from the database.";
+$L["notify_clear_error"] = "<a href=\"#\" onclick=\"{\$js_link}\">Fai clic qui</a> per ignorare questo messaggio di errore e rimuovere semplicemente il riferimento dal database.";
 $L["notify_clear_errors"] = "<a href=\"#\" onclick=\"{\$js_link}\">Click here</a> to ignore these error messages and just remove the references from the database.";
 $L["notify_file_deleted_with_error"] = "<b>1</b> file was successfully deleted, but the following errors occurred";
 $L["notify_files_deleted_with_error"] = "<b>{\$num_files}</b> files were successfully deleted, but the following errors occurred";
