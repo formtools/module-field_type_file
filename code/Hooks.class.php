@@ -140,7 +140,7 @@ END;
 
 		return array(
 			"success" => $all_successful,
-			"message" => self::getFileUploadErrorMsg($file_size_errors, $file_extension_errors, $file_rename_errors, $L),
+			"message" => self::getErrorMsgFromUploadFileErrors($file_size_errors, $file_extension_errors, $file_rename_errors, $L),
 			"redirect_query_params" => $redirect_query_params
 		);
 	}
@@ -726,7 +726,6 @@ END;
 			$db->execute();
 		}
 
-		// TODO look this over. Maybe just move back to Module would make things easiest...
 		extract(CoreHooks::processHookCalls("end", compact("form_id", "submission_id", "field_id", "force_delete"), array("success", "message")), EXTR_OVERWRITE);
 
 		$deleted_files = array();

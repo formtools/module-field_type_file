@@ -18,13 +18,12 @@ class Module extends FormToolsModule
 	protected $authorEmail = "ben.keen@gmail.com";
 	protected $authorLink = "https://formtools.org";
 	protected $version = "2.1.0";
-	protected $date = "2018-01-20";
+	protected $date = "2019-01-19";
 	protected $originLanguage = "en_us";
 
 	protected $nav = array(
 		"module_name" => array("index.php", false)
 	);
-
 
 	public function install($module_id)
 	{
