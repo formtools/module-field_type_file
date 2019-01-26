@@ -197,6 +197,16 @@ END;
 		),
 
 		array(
+			"field_label" => "File name format",
+			"field_setting_identifier" => "file_name_format",
+			"field_type" => "textbox",
+			"field_orientation" => "na",
+			"default_value_type" => "static",
+			"default_value" => "{\$clean_filename}",
+			"settings" => array()
+		),
+
+		array(
 			"field_label" => "Folder Path",
 			"field_setting_identifier" => "folder_path",
 			"field_type" => "textbox",

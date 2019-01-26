@@ -13,12 +13,12 @@ use PDO;
 class Module extends FormToolsModule
 {
 	protected $moduleName = "File Upload";
-	protected $moduleDesc = "This module provides a simple file upload field for use in your Form Tools fields.";
+	protected $moduleDesc = "File upload fields for your Form Tools forms.";
 	protected $author = "Ben Keen";
 	protected $authorEmail = "ben.keen@gmail.com";
 	protected $authorLink = "https://formtools.org";
-	protected $version = "2.1.1";
-	protected $date = "2019-01-20";
+	protected $version = "2.2.0";
+	protected $date = "2019-01-25";
 	protected $originLanguage = "en_us";
 
 	protected $nav = array(

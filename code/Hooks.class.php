@@ -504,6 +504,7 @@ END;
 		$file_upload_max_size = $file_field_info["settings"]["max_file_size"];
 		$file_upload_dir = $file_field_info["settings"]["folder_path"];
 		$permitted_file_types = $file_field_info["settings"]["permitted_file_types"];
+		$file_name_format = $file_field_info["settings"]["file_name_format"];
 
 		// check upload folder is valid and writable
 		if (!is_dir($file_upload_dir) || !is_writable($file_upload_dir)) {
@@ -516,7 +517,8 @@ END;
 			$is_multiple_files = "no";
 		}
 
-		$fileinfo = self::extractSingleFieldFileUploadData($is_multiple_files, $field_name, $_FILES);
+		$fileinfo = self::extractSingleFieldFileUploadData($is_multiple_files, $field_name, $file_name_format,
+			$form_id, $submission_id, $_FILES);
 
 		if (empty($fileinfo)) {
 			return array(true, "");
@@ -748,10 +750,14 @@ END;
 	 * the top level array contains a single hash.
 	 * @param $is_multiple_files
 	 * @param $field_name
+	 * @param $file_name_format
+	 * @param $form_id
+	 * @param $submission_id
 	 * @param $files
 	 * @return array
 	 */
-	private static function extractSingleFieldFileUploadData($is_multiple_files, $field_name, $files)
+	private static function extractSingleFieldFileUploadData($is_multiple_files, $field_name, $file_name_format,
+		$form_id, $submission_id, $files)
 	{
 		$file_info = $files[$field_name];
 
@@ -761,7 +767,8 @@ END;
 
 			// the is_array checks the user didn't accidentally configure the field as a multiple file upload
 			if (!empty($file_info["name"]) && !is_array($file_info["name"])) {
-				$file_data[] = self::getSingleUploadedFileData($file_info["name"], $file_info["size"], $file_info["tmp_name"]);
+				$file_data[] = self::getSingleUploadedFileData($file_info["name"], $file_info["size"], $file_name_format,
+					$file_info["tmp_name"], $form_id, $submission_id);
 			}
 		} else {
 			// similarly, this checks the user didn't misconfigure the form as a single file upload but set it to "multiple"
@@ -770,7 +777,8 @@ END;
 				$num_files = count($files[$field_name]["name"]);
 				for ($i = 0; $i < $num_files; $i++) {
 					if (!empty($file_info["name"][$i])) {
-						$file_data[] = self::getSingleUploadedFileData($file_info["name"][$i], $file_info["size"][$i], $file_info["tmp_name"][$i]);
+						$file_data[] = self::getSingleUploadedFileData($file_info["name"][$i], $file_info["size"][$i],
+							$file_name_format, $file_info["tmp_name"][$i], $form_id, $submission_id);
 					}
 				}
 			}
@@ -780,7 +788,8 @@ END;
 	}
 
 
-	private static function getSingleUploadedFileData($filename, $file_size, $tmp_name)
+	private static function getSingleUploadedFileData($filename, $file_size, $file_name_format, $tmp_name, $form_id,
+		$submission_id)
 	{
 		$char_whitelist = Core::getFilenameCharWhitelist();
 		$valid_chars = preg_quote($char_whitelist);
@@ -794,10 +803,26 @@ END;
 		if (empty($filename_without_ext_clean)) {
 			$filename_without_ext_clean = "file";
 		}
+		$clean_filename = $filename_without_ext_clean . "." . $extension;
+
+		$now = General::getCurrentDatetime();
+		$filename = General::evalSmartyString($file_name_format, array(
+			"clean_filename" => $clean_filename,
+			"raw_filename" => $filename,
+			"extension" => $extension,
+			"submission_id" => $submission_id,
+			"form_id" => $form_id,
+			"date" => General::getDate(0, $now, "Ymd"),
+			"unixtime" => General::getDate(0, $now, "U")
+		));
+
+		// replace any colons that the user may have entered when formatting $unixtime. They would cause the storage
+		// of the filename to be invalid (colons are used to separate multiple fields)
+		$filename = preg_replace("/:/", "", $filename);
 
 		return array(
 			"original_filename" => $filename,
-			"filename" => $filename_without_ext_clean . "." . $extension,
+			"filename" => $filename,
 			"filesize" => $file_size / 1000,
 			"tmp_filename" => $tmp_name
 		);
