@@ -191,5 +191,5 @@ files_ns.delete_submission_file_response = function (data) {
 			group.find(".cf_file_list,.cf_file_delete_selected").hide();
 		}
 	}
-	ft.display_message(data.target_message_id, data.success, data.message);
+	ft.display_message(data.target_message_id, data.success ? 1 : 0, data.message);
 };

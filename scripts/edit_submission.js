@@ -192,5 +192,5 @@ files_ns.delete_files_response = function (data) {
 			group.find(".cf_file_upload_btn").show();
 		}
 	}
-	ft.display_message(data.target_message_id, data.success, data.message);
+	ft.display_message(data.target_message_id, data.success ? 1 : 0, data.message);
 };
