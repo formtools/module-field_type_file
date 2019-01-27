@@ -18,7 +18,7 @@ class Module extends FormToolsModule
 	protected $authorEmail = "ben.keen@gmail.com";
 	protected $authorLink = "https://formtools.org";
 	protected $version = "2.2.0";
-	protected $date = "2019-01-25";
+	protected $date = "2019-01-27";
 	protected $originLanguage = "en_us";
 
 	protected $nav = array(

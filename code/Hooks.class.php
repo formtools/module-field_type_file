@@ -768,7 +768,7 @@ END;
 			// the is_array checks the user didn't accidentally configure the field as a multiple file upload
 			if (!empty($file_info["name"]) && !is_array($file_info["name"])) {
 				$file_data[] = self::getSingleUploadedFileData($file_info["name"], $file_info["size"], $file_name_format,
-					$file_info["tmp_name"], $form_id, $submission_id);
+					$file_info["tmp_name"], $form_id, $submission_id, 0, $field_name);
 			}
 		} else {
 			// similarly, this checks the user didn't misconfigure the form as a single file upload but set it to "multiple"
@@ -778,7 +778,7 @@ END;
 				for ($i = 0; $i < $num_files; $i++) {
 					if (!empty($file_info["name"][$i])) {
 						$file_data[] = self::getSingleUploadedFileData($file_info["name"][$i], $file_info["size"][$i],
-							$file_name_format, $file_info["tmp_name"][$i], $form_id, $submission_id);
+							$file_name_format, $file_info["tmp_name"][$i], $form_id, $submission_id, $i, $field_name);
 					}
 				}
 			}
@@ -789,7 +789,7 @@ END;
 
 
 	private static function getSingleUploadedFileData($filename, $file_size, $file_name_format, $tmp_name, $form_id,
-		$submission_id)
+		$submission_id, $file_upload_index, $field_name)
 	{
 		$char_whitelist = Core::getFilenameCharWhitelist();
 		$valid_chars = preg_quote($char_whitelist);
@@ -808,10 +808,14 @@ END;
 		$now = General::getCurrentDatetime();
 		$filename = General::evalSmartyString($file_name_format, array(
 			"clean_filename" => $clean_filename,
+			"clean_filename_no_extension" => $filename_without_ext_clean,
 			"raw_filename" => $filename,
+			"raw_filename_no_extension" => $filename_without_extension,
 			"extension" => $extension,
 			"submission_id" => $submission_id,
 			"form_id" => $form_id,
+			"index" => $file_upload_index,
+			"field_name" => $field_name,
 			"date" => General::getDate(0, $now, "Ymd"),
 			"unixtime" => General::getDate(0, $now, "U")
 		));

@@ -197,7 +197,7 @@ END;
 		),
 
 		array(
-			"field_label" => "File name format",
+			"field_label" => "Filename format",
 			"field_setting_identifier" => "file_name_format",
 			"field_type" => "textbox",
 			"field_orientation" => "na",
