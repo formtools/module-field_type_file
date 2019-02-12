@@ -33,7 +33,7 @@ class Hooks
 			return;
 		}
 		echo <<<END
-<script src="$root_url/modules/field_type_file/scripts/edit_submission.js?v=210"></script>
+<script src="$root_url/modules/field_type_file/scripts/edit_submission.js?v=211"></script>
 <script>
 if (typeof g.messages == 'undefined') {
 	g.messages = {};
@@ -59,7 +59,7 @@ END;
 
 		// this includes the necessary JS for the file upload field type
 		echo <<< END
-  <script src="$root_url/modules/field_type_file/scripts/standalone.js?v=210"></script>
+  <script src="$root_url/modules/field_type_file/scripts/standalone.js?v=211"></script>
   <script>
   if (typeof g.messages == 'undefined')
     g.messages = {};

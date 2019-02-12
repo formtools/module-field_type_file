@@ -100,7 +100,8 @@ files_ns.check_required = function () {
 		if (rsv_custom_func_errors[i].func == "files_ns.check_required") {
 			var field = document.edit_submission_form[rsv_custom_func_errors[i].field];
 			var field_id = rsv_custom_func_errors[i].field_id;
-			var has_file = ($("#cf_file_" + field_id + "_content").css("display") == "block" && $("#cf_file_" + field_id + "_content").html() != "");
+
+			var has_file = $("#cf_file_" + field_id).hasClass("cf_file_has_items");
 			if (!has_file && !field.value) {
 				errors.push([field, rsv_custom_func_errors[i].err]);
 			}
@@ -188,6 +189,7 @@ files_ns.delete_files_response = function (data) {
 		}
 
 		if (group.find(".cf_file_row_cb").length === 0) {
+			group.removeClass("cf_file_has_items");
 			group.find(".cf_file_list,.cf_file_delete_selected").hide();
 			group.find(".cf_file_upload_btn").show();
 		}

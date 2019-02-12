@@ -20,8 +20,8 @@ switch ($request["action"]) {
 		$field_id = $request["field_id"];
 
 		// check the submission and field being deleted belongs to the View the user is in
-		if (!Submissions::checkViewContainsSubmission($form_id, $view_id, $submission_id) ||
-			empty(ViewFields::getViewField($view_id, $field_id))) {
+		$view_field = ViewFields::getViewField($view_id, $field_id);
+		if (!Submissions::checkViewContainsSubmission($form_id, $view_id, $submission_id) || empty($view_field)) {
 			output_json_with_return_vars(array(
 				"success" => false,
 				"message" => "Permission denied."
