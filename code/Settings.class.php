@@ -91,8 +91,7 @@ END;
 {else}
 	<div class="cf_file_num_files"><b>{\$filenames|@count}</b> {\$LANG.word_files|lower}</div> 
 {/if}
-
-{else}
+{elseif \$CONTEXTPAGE == 'edit_submission'}
 	<ul class="cf_file_list_view"> 
 		{foreach from=\$filenames item=filename}
 		<li>
@@ -101,6 +100,8 @@ END;
 		</li>
 		{/foreach}
 	</ul>
+{else}
+{foreach from=\$filenames item=filename name=loop}{\$filename}{if !\$smarty.foreach.loop.last},{/if} {/foreach}
 {/if}
 END;
 
