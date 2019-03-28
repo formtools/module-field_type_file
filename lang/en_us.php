@@ -38,3 +38,5 @@ $L["text_help"] = "For more information on this module, please see the <a href=\
 $L["text_reset_field_type_desc"] = "This button below lets you reset this field type to the latest factory defaults. Generally you don't have to do this, but in case of a failed upgrade this is a failsafe way to ensure it's up to date.";
 $L["text_intro_desc"] = "Use the <a href=\"{\$link}\">Settings &raquo; Files</a> page to define the default file upload settings. You can override those settings by editing any form field via the Edit Form &raquo; Fields tab.";
 $L["word_help"] = "Help";
+
+$L["notify_invalid_field_upload_folder"] = "This field's upload folder is either invalid or is not writable.";

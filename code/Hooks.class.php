@@ -153,8 +153,6 @@ END;
 	 */
 	public static function apiProcessFormSubmissionHook($params, $L)
 	{
-		$LANG = Core::$L;
-
 		// if the form being submitted doesn't contain any form fields we do nothing
 		$file_fields = $params["file_fields"];
 		if (empty($file_fields)) {
@@ -204,7 +202,7 @@ END;
 		}
 
 		if (!empty($problem_files)) {
-			$message = $LANG["notify_submission_updated_file_problems"] . "<br /><br />";
+			$message = $L["notify_submission_updated_file_problems"] . "<br /><br />";
 			foreach ($problem_files as $problem) {
 				$message .= "&bull; <b>{$problem[0]}</b>: $problem[1]<br />\n";
 			}
@@ -489,7 +487,6 @@ END;
 	public static function uploadSubmissionFile($form_id, $submission_id, $file_field_info, $L)
 	{
 		$db = Core::$db;
-		$LANG = Core::$L;
 
 		// get the column name and upload folder for this field
 		$col_name = $file_field_info["field_info"]["col_name"];
@@ -508,7 +505,7 @@ END;
 
 		// check upload folder is valid and writable
 		if (!is_dir($file_upload_dir) || !is_writable($file_upload_dir)) {
-			return array(false, $LANG["notify_invalid_field_upload_folder"]);
+			return array(false, $L["notify_invalid_field_upload_folder"]);
 		}
 
 		// if a user is using a browser that doesn't support multiple file uploads (IE10 and before) the field may be
