@@ -98,10 +98,11 @@ files_ns.check_required = function () {
 	var errors = [];
 	for (var i = 0; i < rsv_custom_func_errors.length; i++) {
 		if (rsv_custom_func_errors[i].func == "files_ns.check_required") {
-			var field = document.edit_submission_form[rsv_custom_func_errors[i].field];
 			var field_id = rsv_custom_func_errors[i].field_id;
-
-			var has_file = $("#cf_file_" + field_id).hasClass("cf_file_has_items");
+			var id_field = $("#cf_file_" + field_id);
+			var has_file = id_field.hasClass("cf_file_has_items");
+			var is_multiple = id_field.hasClass("cf_file_multiple");
+			var field = document.edit_submission_form[rsv_custom_func_errors[i].field + (is_multiple ? '[]' : '')];
 			if (!has_file && !field.value) {
 				errors.push([field, rsv_custom_func_errors[i].err]);
 			}

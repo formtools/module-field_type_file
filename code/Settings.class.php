@@ -128,7 +128,7 @@ END;
 			<a href="{\$folder_url}/{\$filename}" 
 				{if \$use_fancybox == "yes"}class="fancybox"{/if}>{\$filename}</a>
 			{if \$num_files == 1 && \$multiple_files == "no"}
-				<input type="button" class="cf_delete_file" value="{\$LANG.phrase_delete_file}" />
+				<input type="button" class="cf_delete_file" value="{\$LANG.word_delete}" />
 			{/if}
 		</li>
 		{/foreach}
