@@ -100,6 +100,10 @@ END;
 		</li>
 		{/foreach}
 	</ul>
+{elseif \$CONTEXTPAGE == 'export:text'}
+{foreach from=\$filenames item=filename name=loop}{\$folder_url}/{\$filename}{if !\$smarty.foreach.loop.last},{/if} {/foreach}
+{elseif \$CONTEXTPAGE == 'export:html'}
+{foreach from=\$filenames item=filename name=loop}<a href="{\$folder_url}/{\$filename}" target="_blank">{\$filename}</a>{if not \$smarty.foreach.loop.last}, {/if}{/foreach}
 {else}
 {foreach from=\$filenames item=filename name=loop}{\$filename}{if !\$smarty.foreach.loop.last},{/if} {/foreach}
 {/if}
@@ -257,6 +261,7 @@ END;
 			"settings" => array()
 		)
 	);
+
 
 	public static function addFieldType($module_id, $group_id, $list_order)
 	{
